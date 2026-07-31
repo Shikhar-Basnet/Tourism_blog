@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { connectDB } from "../config/db.js";
 import Destination from "../models/Destination.js";
 
-const sampleDestinations = [
+const Destinations = [
   {
     title: "Pokhara",
     description:
@@ -55,7 +55,7 @@ const sampleDestinations = [
 const seed = async () => {
   await connectDB();
   await Destination.deleteMany();
-  await Destination.insertMany(sampleDestinations);
+  await Destination.insertMany(Destinations);
   console.log("Sample destinations seeded successfully");
   await mongoose.disconnect();
   process.exit();

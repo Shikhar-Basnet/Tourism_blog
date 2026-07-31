@@ -14,9 +14,33 @@ Reviews, Weather, Maps, Admin, SEO) can be dropped in without refactoring.
 - React Query data fetching, Home page listing destinations from the live API
 - Enterprise folder structure for both client and server (matches your spec)
 
+## Phase 2 — Authentication & RBAC (added)
+- `User` model (`server/src/models/User.js`) — OAuth users (google/facebook) + local staff accounts
+- `passport.js` config — Google & Facebook strategies, stateless (no sessions), find-or-create + account linking by email
+- JWT access token (15 min) + refresh token (30 days) in **httpOnly cookies** (`server/src/utils/generateTokens.js`)
+- Refresh token is hashed in the DB and **rotated on every use** (`authController.refresh`)
+- RBAC middleware: `protect` (must be logged in) and `authorize(...roles)` (must have role) — see `server/src/middlewares/authMiddleware.js`
+- Roles: `user` (default, OAuth), `editor`, `admin`, `superadmin`
+- Destination write routes (`POST /`, `PUT/DELETE /id/:id`) are now staff-only
+- Frontend: `AuthContext` + `useAuth()` hook, `ProtectedRoute` component (supports role restriction), `Login` page (Google/Facebook buttons + staff email/password form), axios interceptor that **silently refreshes expired access tokens and retries the request**
+
+### New setup steps
+1. Get OAuth credentials:
+   - Google: https://console.cloud.google.com/apis/credentials → OAuth client ID → set authorized redirect URI to `http://localhost:5000/api/v1/auth/google/callback`
+   - Facebook: https://developers.facebook.com/apps → add Facebook Login product → redirect URI `http://localhost:5000/api/v1/auth/facebook/callback`
+2. Fill in `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET` in `server/.env`
+3. Set `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `server/.env`, then run:
+   ```bash
+   npm run seed:admin
+   ```
+4. `npm install` again in `server/` (adds passport packages) and restart `npm run dev`
+5. Visit http://localhost:5173/login
+   - "Continue with Google/Facebook" → real OAuth flow → redirects back logged in
+   - "Staff login" → use your seeded admin email/password → visit `/admin` to confirm RBAC blocks non-staff and allows staff
+
 ## What's NOT built yet (next phases)
-Auth (Google/Facebook OAuth, JWT, RBAC), Blogs, Categories, Reviews/Comments, Weather (Open-Meteo),
-Maps (Leaflet), Admin Dashboard, SEO schemas/sitemap — these plug into this same structure.
+Blogs, Categories, Reviews/Comments, Weather (Open-Meteo), Maps (Leaflet), full Admin CRUD panels,
+SEO schemas/sitemap, production security hardening (CSRF, etc.) — these plug into this same structure.
 
 ## Setup
 
@@ -50,9 +74,8 @@ talk to each other with no CORS config needed in dev.
 3. Copy the connection string into `MONGO_URI` in `server/.env`
 
 ## Recommended next step
-Once this runs locally, tell me to build **Phase 2: Authentication (Google/Facebook OAuth + JWT + RBAC)**
-and I'll add it directly on top of this structure — controllers, models, middleware, and the frontend
-auth context/hooks.
+Once Phase 2 is verified locally, tell me to build **Phase 3: Blog System + Categories (full CRUD)**
+and I'll add it directly on top of this structure, reusing the same auth/RBAC layer.
 
 ## Deployment targets (for later phases)
 - Frontend → Vercel

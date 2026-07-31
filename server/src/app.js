@@ -7,7 +7,9 @@ import compression from "compression";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
 
+import passport from "./config/Passport.js";
 import destinationRoutes from "./routes/destinationRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -37,12 +39,16 @@ const apiLimiter = rateLimit({
 });
 app.use("/api", apiLimiter);
 
+// Stateless — we never call passport.session(), auth state lives entirely in our JWT cookies
+app.use(passport.initialize());
+
 // --- Health check ---
 app.get("/api/v1/health", (req, res) => {
   res.json({ success: true, message: "Nepal Tourism API is running" });
 });
 
-// --- Routes (add more as modules grow: /blogs, /auth, /reviews, /weather...) ---
+// --- Routes (add more as modules grow: /blogs, /reviews, /weather...) ---
+app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/destinations", destinationRoutes);
 
 // --- Error handling (must be last) ---

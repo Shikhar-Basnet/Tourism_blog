@@ -6,11 +6,15 @@ import {
   updateDestination,
   deleteDestination,
 } from "../controllers/destinationController.js";
+import { protect, authorize } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.route("/").get(getDestinations).post(createDestination);
+const staffOnly = [protect, authorize("editor", "admin", "superadmin")];
+
+// Public reads
+router.route("/").get(getDestinations).post(...staffOnly, createDestination);
 router.route("/:slug").get(getDestinationBySlug);
-router.route("/id/:id").put(updateDestination).delete(deleteDestination);
+router.route("/id/:id").put(...staffOnly, updateDestination).delete(...staffOnly, deleteDestination);
 
 export default router;
