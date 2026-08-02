@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import Navbar from "./components/Navbar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Home from "./pages/Home.jsx";
-import Login from "./pages/Login.jsx";
 import Destinations from "./pages/Destinations.jsx";
 import Blogs from "./pages/Blogs.jsx";
 import BlogDetail from "./pages/BlogDetail.jsx";
@@ -35,7 +34,6 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/destinations" element={<Destinations />} />
-        <Route path="/login" element={<Login />} />
         <Route path="/blogs" element={<Blogs />} />
         <Route path="/blogs/:slug" element={<BlogDetail />} />
         <Route path="/destinations/:slug" element={<DestinationDetail />} />

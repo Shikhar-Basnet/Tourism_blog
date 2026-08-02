@@ -30,6 +30,8 @@ const seedAdmin = async () => {
   }
 
   await mongoose.disconnect();
+  console.log("Connected DB:", mongoose.connection.name);
+  console.log("Connected host:", mongoose.connection.host);
   process.exit();
 };
 

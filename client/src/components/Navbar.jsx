@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import AuthModal from "./AuthModal.jsx";
 import {
   Menu,
   X,
@@ -36,6 +37,9 @@ export default function Navbar() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef(null);
+
+  // --- Auth modal (sign in) ---
+  const [authOpen, setAuthOpen] = useState(false);
 
   const primaryLinks = [
     { href: "/", label: "Home", icon: HomeIcon },
@@ -247,12 +251,13 @@ export default function Navbar() {
                   </div>
                 </>
               ) : (
-                <Link
-                  to="/login"
+                <button
+                  type="button"
+                  onClick={() => setAuthOpen(true)}
                   className="rounded-full border border-gray-300 px-4 py-1.5 transition-shadow hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]"
                 >
                   Sign in
-                </Link>
+                </button>
               )}
             </div>
           )}
@@ -387,12 +392,16 @@ export default function Navbar() {
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    to="/login"
-                    className="flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-gray-300 text-sm font-medium text-gray-900 hover:bg-gray-50"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeDrawer();
+                      setAuthOpen(true);
+                    }}
+                    className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-gray-300 text-sm font-medium text-gray-900 hover:bg-gray-50"
                   >
                     <LogIn size={16} /> Sign in
-                  </Link>
+                  </button>
                 ))}
             </div>
           </div>
@@ -426,6 +435,9 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Sign-in modal */}
+      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }
