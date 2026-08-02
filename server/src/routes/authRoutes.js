@@ -13,7 +13,14 @@ import { protect } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
 // --- Google OAuth ---
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
+router.get("/google", (req, res, next) => {
+  const redirectTo = req.query.redirect || "/";
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+    state: redirectTo,
+  })(req, res, next);
+});
 router.get(
   "/google/callback",
   passport.authenticate("google", { session: false, failureRedirect: `${process.env.CLIENT_URL}/login?error=google` }),
@@ -21,7 +28,14 @@ router.get(
 );
 
 // --- Facebook OAuth ---
-router.get("/facebook", passport.authenticate("facebook", { scope: ['public_profile', 'email'], session: false }));
+router.get("/facebook", (req, res, next) => {
+  const redirectTo = req.query.redirect || "/";
+  passport.authenticate("facebook", {
+    scope: ["public_profile", "email"],
+    session: false,
+    state: redirectTo,
+  })(req, res, next);
+});
 router.get(
   "/facebook/callback",
   passport.authenticate("facebook", { session: false, failureRedirect: `${process.env.CLIENT_URL}/login?error=facebook` }),

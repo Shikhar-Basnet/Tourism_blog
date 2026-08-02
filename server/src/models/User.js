@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    email: { type: String, required: true, lowercase: true, trim: true },
     avatar: { type: String },
 
     // OAuth users have provider + providerId. Admin/local users have password instead.
@@ -31,6 +31,15 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Email is intentionally NOT globally unique. A staff member's local admin
+// account and their personal Google/Facebook login are treated as fully
+// separate accounts even if they share an email — this is what stops OAuth
+// login from ever being able to reach (or inherit the role of) a staff
+// account. Uniqueness is instead scoped per provider:
+userSchema.index({ provider: 1, email: 1 }, { unique: true });
+// providerId is only meaningful for OAuth providers, hence sparse.
+userSchema.index({ provider: 1, providerId: 1 }, { unique: true, sparse: true });
 
 // Hash password only for local (admin) accounts before saving
 userSchema.pre("save", async function (next) {

@@ -8,9 +8,11 @@ import {
   clearAuthCookies,
 } from "../utils/generateTokens.js";
 
-// Shared by both OAuth callbacks: issue tokens, store hashed refresh token, redirect home.
+// Shared by both OAuth callbacks: issue tokens, store hashed refresh token,
+// then return the visitor to the page they were trying to reach.
 const issueTokensAndRedirect = async (req, res) => {
   const user = req.user;
+  const redirectTarget = req.query?.state || "/";
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
@@ -19,7 +21,9 @@ const issueTokensAndRedirect = async (req, res) => {
   await user.save();
 
   setAuthCookies(res, accessToken, refreshToken);
-  res.redirect(process.env.CLIENT_URL);
+
+  const safeRedirect = redirectTarget.startsWith("/") ? redirectTarget : "/";
+  res.redirect(`${process.env.CLIENT_URL}${safeRedirect}`);
 };
 
 // @route   GET /api/v1/auth/google/callback

@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "seed": "node src/seeders/destinationSeeder.js",
-    "seed:admin": "node src/seeders/adminSeeder.js"
+    "seed:admin": "node src/seeders/adminSeeder.js",
+    "seed:blogs": "node src/seeders/blogSeeder.js"
   },
   "dependencies": {
     "express": "^4.19.2",

@@ -40,7 +40,59 @@ export const getDestinationBySlug = async (req, res, next) => {
       res.status(404);
       throw new Error("Destination not found");
     }
-    res.json({ success: true, data: destination });
+
+    const isLikedByCurrentUser = req.user
+      ? destination.likedBy.some((id) => id.toString() === req.user._id.toString())
+      : false;
+
+    res.json({ success: true, data: destination, isLikedByCurrentUser });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Distinct provinces & categories, for populating filter dropdowns
+// @route   GET /api/v1/destinations/meta/filters
+export const getDestinationFilters = async (req, res, next) => {
+  try {
+    const [provinces, categories] = await Promise.all([
+      Destination.distinct("province"),
+      Destination.distinct("category"),
+    ]);
+    res.json({
+      success: true,
+      data: { provinces: provinces.sort(), categories: categories.sort() },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Toggle a like from the current user — restricted to role "user".
+// @route   POST /api/v1/destinations/id/:id/like
+export const toggleDestinationLike = async (req, res, next) => {
+  try {
+    const destination = await Destination.findById(req.params.id);
+    if (!destination) {
+      res.status(404);
+      throw new Error("Destination not found");
+    }
+
+    const userId = req.user._id.toString();
+    const alreadyLiked = destination.likedBy.some((id) => id.toString() === userId);
+
+    if (alreadyLiked) {
+      destination.likedBy = destination.likedBy.filter((id) => id.toString() !== userId);
+    } else {
+      destination.likedBy.push(req.user._id);
+    }
+
+    await destination.save({ validateBeforeSave: false });
+
+    res.json({
+      success: true,
+      data: { liked: !alreadyLiked, likesCount: destination.likedBy.length },
+    });
   } catch (err) {
     next(err);
   }

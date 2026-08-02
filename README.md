@@ -16,7 +16,7 @@ Reviews, Weather, Maps, Admin, SEO) can be dropped in without refactoring.
 
 ## Phase 2 — Authentication & RBAC (added)
 - `User` model (`server/src/models/User.js`) — OAuth users (google/facebook) + local staff accounts
-- `passport.js` config — Google & Facebook strategies, stateless (no sessions), find-or-create + account linking by email
+- `passport.js` config — Google & Facebook strategies, stateless (no sessions), find-or-create by (provider, providerId)
 - JWT access token (15 min) + refresh token (30 days) in **httpOnly cookies** (`server/src/utils/generateTokens.js`)
 - Refresh token is hashed in the DB and **rotated on every use** (`authController.refresh`)
 - RBAC middleware: `protect` (must be logged in) and `authorize(...roles)` (must have role) — see `server/src/middlewares/authMiddleware.js`
@@ -35,8 +35,42 @@ Reviews, Weather, Maps, Admin, SEO) can be dropped in without refactoring.
    ```
 4. `npm install` again in `server/` (adds passport packages) and restart `npm run dev`
 5. Visit http://localhost:5173/login
-   - "Continue with Google/Facebook" → real OAuth flow → redirects back logged in
+   - "Continue with Google/Facebook" → real OAuth flow → redirects back to Home, logged in
    - "Staff login" → use your seeded admin email/password → visit `/admin` to confirm RBAC blocks non-staff and allows staff
+
+## Phase 2.1 — Security fix: OAuth accounts can no longer inherit staff roles
+An earlier version of this scaffold linked OAuth logins to existing users **by email**. If your
+Google/Facebook account shares an email with a seeded staff account, that meant logging in with
+Google could silently attach to (and inherit the role of) that staff account — a real privilege
+escalation risk. Fixed:
+
+- OAuth users are now matched **only** by `(provider, providerId)` — never by email — and are
+  always created with `role: "user"`. There is no path from OAuth login to an elevated role.
+- Local (staff) and OAuth accounts are intentionally allowed to share the same email address as
+  two completely separate documents — email uniqueness is now scoped **per provider**
+  (`{ provider, email }` unique index) instead of globally unique.
+- The stored user is intentionally minimal — this is standard practice for OAuth: you always
+  persist a user record (id, name, email, avatar, role) so future features like comments/reviews
+  can reference a stable user id. You never receive or store the person's Google/Facebook password.
+- Public OAuth users have no dashboard — after login they land back on the Home page. This account
+  currently exists only so a future phase (Reviews/Comments on destinations and blogs) has a real
+  user to attach content to; there's nothing else for a plain "user" role to do yet.
+
+### ⚠️ Required one-time DB cleanup
+If you tested login before this fix, your seeded admin's `provider` field was likely overwritten
+from `"local"` to `"google"`, which breaks staff email/password login. Easiest fix — wipe and reseed:
+
+```bash
+# In MongoDB Atlas → Collections, or via mongosh connected to your MONGO_URI:
+db.users.deleteMany({})
+```
+```bash
+# Then, from server/:
+npm run seed:admin
+```
+
+If you'd rather not delete data, you can instead manually edit that one document in Atlas and set
+`provider` back to `"local"` and remove the `providerId` field.
 
 ## What's NOT built yet (next phases)
 Blogs, Categories, Reviews/Comments, Weather (Open-Meteo), Maps (Leaflet), full Admin CRUD panels,

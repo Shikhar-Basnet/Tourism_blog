@@ -27,9 +27,20 @@ const destinationSchema = new mongoose.Schema(
     gallery: [{ type: String }],
     tags: [{ type: String }],
     featured: { type: Boolean, default: false },
+
+    // Same toggle-based like pattern as Blog — see Blog.js for why.
+    likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+destinationSchema.virtual("likesCount").get(function () {
+  return this.likedBy?.length || 0;
+});
 
 destinationSchema.pre("validate", function (next) {
   if (this.title && !this.slug) {

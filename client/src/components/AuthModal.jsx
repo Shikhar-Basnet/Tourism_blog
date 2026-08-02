@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { googleLoginUrl, facebookLoginUrl, adminLogin } from "../services/authService.js";
 import { useAuth } from "../hooks/useAuth.js";
 
-export default function Login() {
+export default function AuthModal({ isOpen, onClose, redirectTo }) {
   const [staffMode, setStaffMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,18 +14,32 @@ export default function Login() {
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = location.state?.from?.pathname || "/";
 
-  const handleStaffLogin = async (e) => {
-    e.preventDefault();
+  const resolvedRedirectTo = redirectTo || `${location.pathname}${location.search}` || "/";
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  const handleStaffLogin = async (event) => {
+    event.preventDefault();
     setError("");
     setSubmitting(true);
+
     try {
       const loggedInUser = await adminLogin(email, password);
       setUser(loggedInUser);
+      onClose?.();
 
       const isStaff = ["editor", "admin", "superadmin"].includes(loggedInUser.role);
-      navigate(isStaff ? "/admin" : redirectTo, { replace: true });
+      navigate(isStaff ? "/admin" : resolvedRedirectTo, { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     } finally {
@@ -33,35 +47,43 @@ export default function Login() {
     }
   };
 
-  return (
-    <div className="flex min-h-[70vh] items-center justify-center px-4">
-      <Helmet>
-        <title>Sign in | Nepal Tourism</title>
-      </Helmet>
+  if (!isOpen) return null;
 
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]">
-        <h1 className="mb-1 text-center text-2xl font-normal text-gray-900">Sign in</h1>
-        <p className="mb-6 text-center text-sm text-gray-600">to continue to Nepal Tourism</p>
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/55 px-4 py-6">
+      <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)]">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-full p-2 text-gray-600 hover:bg-gray-50"
+          aria-label="Close login"
+        >
+          <X size={18} />
+        </button>
+
+        <div className="mb-6 text-center">
+          <h2 className="text-2xl font-normal text-gray-900">Sign in</h2>
+          <p className="mt-1 text-sm text-gray-600">to continue on this page</p>
+        </div>
 
         {!staffMode ? (
           <div className="space-y-3">
             <a
-              href={googleLoginUrl}
+              href={`${googleLoginUrl}?redirect=${encodeURIComponent(resolvedRedirectTo)}`}
               className="flex items-center justify-center gap-3 rounded-full border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-900 transition-shadow hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]"
             >
               Continue with Google
             </a>
             <a
-              href={facebookLoginUrl}
+              href={`${facebookLoginUrl}?redirect=${encodeURIComponent(resolvedRedirectTo)}`}
               className="flex items-center justify-center gap-3 rounded-full border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-900 transition-shadow hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]"
             >
               Continue with Facebook
             </a>
-
             <button
               type="button"
               onClick={() => setStaffMode(true)}
-              className="mt-4 w-full text-center text-xs text-gray-600 hover:text-blue-600"
+              className="mt-2 w-full text-center text-xs text-gray-600 hover:text-blue-600"
             >
               Staff login
             </button>
@@ -73,7 +95,7 @@ export default function Login() {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               required
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -81,14 +103,14 @@ export default function Login() {
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               required
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-full bg-blue-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+              className="w-full rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
               {submitting ? "Signing in..." : "Sign in"}
             </button>
