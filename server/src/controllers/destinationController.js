@@ -98,29 +98,68 @@ export const toggleDestinationLike = async (req, res, next) => {
   }
 };
 
-// @desc    Create destination (admin/editor only — RBAC middleware added in Phase 2)
+// @desc    Create destination — staff only. Accepts multiple uploaded images
+//          (req.files, field name "images") which become the initial gallery.
 // @route   POST /api/v1/destinations
 export const createDestination = async (req, res, next) => {
   try {
-    const destination = await Destination.create(req.body);
+    const body = { ...req.body };
+
+    ["category", "tags", "coordinates"].forEach((key) => {
+      if (typeof body[key] === "string") {
+        try { body[key] = JSON.parse(body[key]); } catch { /* leave as-is */ }
+      }
+    });
+
+    if (req.files?.length) {
+      body.gallery = req.files.map((f) => `/uploads/images/${f.filename}`);
+    }
+
+    const destination = await Destination.create(body);
     res.status(201).json({ success: true, data: destination });
   } catch (err) {
     next(err);
   }
 };
 
-// @desc    Update destination
-// @route   PUT /api/v1/destinations/:id
+// @desc    Update destination — staff only. Supports adding any number of new
+//          images (req.files, field name "images") and removing existing ones
+//          by URL via a JSON-encoded "removeImages" field in the body.
+// @route   PUT /api/v1/destinations/id/:id
 export const updateDestination = async (req, res, next) => {
   try {
-    const destination = await Destination.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
+    const updates = { ...req.body };
+
+    ["category", "tags", "coordinates"].forEach((key) => {
+      if (typeof updates[key] === "string") {
+        try { updates[key] = JSON.parse(updates[key]); } catch { /* leave as-is */ }
+      }
     });
+
+    const destination = await Destination.findById(req.params.id);
     if (!destination) {
       res.status(404);
       throw new Error("Destination not found");
     }
+
+    // Start from the existing gallery, minus anything the admin removed
+    let gallery = destination.gallery || [];
+    if (updates.removeImages) {
+      const toRemove = JSON.parse(updates.removeImages);
+      gallery = gallery.filter((url) => !toRemove.includes(url));
+    }
+    delete updates.removeImages;
+
+    // Append any newly uploaded files
+    if (req.files?.length) {
+      const newUrls = req.files.map((f) => `/uploads/images/${f.filename}`);
+      gallery = [...gallery, ...newUrls];
+    }
+    updates.gallery = gallery;
+
+    Object.assign(destination, updates);
+    await destination.save({ validateBeforeSave: true });
+
     res.json({ success: true, data: destination });
   } catch (err) {
     next(err);
@@ -128,7 +167,7 @@ export const updateDestination = async (req, res, next) => {
 };
 
 // @desc    Delete destination
-// @route   DELETE /api/v1/destinations/:id
+// @route   DELETE /api/v1/destinations/id/:id
 export const deleteDestination = async (req, res, next) => {
   try {
     const destination = await Destination.findByIdAndDelete(req.params.id);

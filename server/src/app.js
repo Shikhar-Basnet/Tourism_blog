@@ -6,7 +6,7 @@ import morgan from "morgan";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
-
+import path from "path";
 import passport from "./config/passport.js";
 import destinationRoutes from "./routes/destinationRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
@@ -58,6 +58,8 @@ app.use("/api/v1/destinations", destinationRoutes);
 app.use("/api/v1/blogs", blogRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/comments", commentRoutes);
+
+app.use("/uploads", express.static(path.resolve("uploads")));
 
 // --- Error handling (must be last) ---
 app.use(notFound);

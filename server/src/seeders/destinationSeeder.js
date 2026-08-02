@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import mongoose from "mongoose";
+import slugify from "slugify";
 import { connectDB } from "../config/db.js";
 import Destination from "../models/Destination.js";
 
@@ -52,11 +53,41 @@ const Destinations = [
   },
 ];
 
+// Upsert by title — safe to re-run any time:
+//  - Only touches these 3 seed destinations, never anything else in the
+//    collection (e.g. destinations added later through the admin panel).
+//  - Never overwrites an existing "gallery" (images uploaded via admin stay
+//    intact); gallery only gets initialized to [] the first time a seed
+//    destination is created.
+//  - Slug is computed here explicitly: findOneAndUpdate does NOT run the
+//    model's pre("validate") hook that normally generates it on .save(),
+//    so without this every upserted doc would get slug: null and collide
+//    on the unique slug index after the first one.
 const seed = async () => {
   await connectDB();
-  await Destination.deleteMany();
-  await Destination.insertMany(Destinations);
-  console.log("Sample destinations seeded successfully");
+
+  // Self-heal: earlier buggy runs (or any other bug) may have left behind
+  // docs with slug: null, which collide with the unique slug index on every
+  // subsequent upsert. Clear those out first so this never needs a manual
+  // cleanup step again.
+  const { deletedCount } = await Destination.deleteMany({ slug: null });
+  if (deletedCount > 0) {
+    console.log(`Removed ${deletedCount} stray destination(s) with a null slug`);
+  }
+
+  for (const dest of Destinations) {
+    const slug = slugify(dest.title, { lower: true, strict: true });
+    await Destination.findOneAndUpdate(
+      { title: dest.title },
+      {
+        $set: { ...dest, slug },
+        $setOnInsert: { gallery: [] },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  }
+
+  console.log(`Upserted ${Destinations.length} sample destinations (existing galleries preserved)`);
   await mongoose.disconnect();
   process.exit();
 };

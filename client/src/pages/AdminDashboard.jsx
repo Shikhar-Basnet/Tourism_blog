@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth.js";
 import { fetchDashboardStats } from "../services/adminService.js";
+import AdminDestinationManager from "../components/AdminDestinationManager.jsx";
 
 function StatCard({ label, value }) {
   return (
@@ -78,6 +79,7 @@ export default function AdminDashboard() {
           </div>
         </>
       )}
+      <AdminDestinationManager />
     </div>
   );
 }
