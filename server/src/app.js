@@ -14,6 +14,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -58,6 +59,7 @@ app.use("/api/v1/destinations", destinationRoutes);
 app.use("/api/v1/blogs", blogRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/comments", commentRoutes);
+app.use("/api/v1/admin/users", userRoutes);
 
 app.use("/uploads", express.static(path.resolve("uploads")));
 

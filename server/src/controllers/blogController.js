@@ -89,7 +89,15 @@ export const getBlogBySlug = async (req, res, next) => {
 // @route   POST /api/v1/blogs  (staff only)
 export const createBlog = async (req, res, next) => {
   try {
-    const blog = await Blog.create({ ...req.body, author: req.user._id });
+    const body = { ...req.body, author: req.user._id };
+
+    if (typeof body.tags === "string") {
+      try { body.tags = JSON.parse(body.tags); }
+      catch { body.tags = body.tags.split(",").map((t) => t.trim()).filter(Boolean); }
+    }
+    if (req.file) body.featuredImage = `/uploads/images/${req.file.filename}`;
+
+    const blog = await Blog.create(body);
     res.status(201).json({ success: true, data: blog });
   } catch (err) {
     next(err);
@@ -99,15 +107,30 @@ export const createBlog = async (req, res, next) => {
 // @route   PUT /api/v1/blogs/id/:id  (staff only)
 export const updateBlog = async (req, res, next) => {
   try {
-    const blog = await Blog.findById(req.params.id);
-    if (!blog) {
-      res.status(404);
-      throw new Error("Blog not found");
+    const updates = { ...req.body };
+
+    if (typeof updates.tags === "string") {
+      try { updates.tags = JSON.parse(updates.tags); }
+      catch { updates.tags = updates.tags.split(",").map((t) => t.trim()).filter(Boolean); }
     }
 
-    Object.assign(blog, req.body);
-    await blog.save(); // triggers reading-time recalculation via pre-save hook
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) { res.status(404); throw new Error("Blog not found"); }
 
+    // "removeFeaturedImage" is a string over multipart form-data ("true"/"false")
+    const removeFeaturedImage = updates.removeFeaturedImage === "true";
+    delete updates.removeFeaturedImage;
+
+    Object.assign(blog, updates);
+
+    // A newly uploaded file always wins; otherwise honor an explicit removal.
+    if (req.file) {
+      blog.featuredImage = `/uploads/images/${req.file.filename}`;
+    } else if (removeFeaturedImage) {
+      blog.featuredImage = undefined;
+    }
+
+    await blog.save();
     res.json({ success: true, data: blog });
   } catch (err) {
     next(err);

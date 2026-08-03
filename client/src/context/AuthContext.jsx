@@ -4,28 +4,32 @@ import { fetchCurrentUser, logoutUser } from "../services/authService.js";
 
 export const AuthContext = createContext(null);
 
+// Hard ceiling on the initial session check. If anything in the auth chain
+// hangs (network stall, refresh deadlock, etc.), this guarantees the app
+// still renders as "logged out" instead of showing "Checking session..."
+// indefinitely. A real, valid session finishes in well under this time.
+const SESSION_CHECK_TIMEOUT_MS = 10000;
+
 export function AuthProvider({ children }) {
   const [user, setUserState] = useState(null);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
-
-  // Bumped on every intentional auth change (login/logout). The background
-  // /auth/me check that runs on mount can resolve AFTER a user has already
-  // logged in through the form (e.g. it was sent while logged out, is slow,
-  // and completes later) — without this guard its stale "not logged in"
-  // result can overwrite a freshly-logged-in user and silently kick them
-  // back out. Any in-flight check that finishes after a version bump is discarded.
   const authVersion = useRef(0);
 
   const loadUser = useCallback(async () => {
     const versionAtRequestStart = authVersion.current;
+
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Session check timed out")), SESSION_CHECK_TIMEOUT_MS)
+    );
+
     try {
-      const currentUser = await fetchCurrentUser();
+      const currentUser = await Promise.race([fetchCurrentUser(), timeout]);
       if (authVersion.current === versionAtRequestStart) setUserState(currentUser);
     } catch {
       if (authVersion.current === versionAtRequestStart) setUserState(null);
     } finally {
-      setLoading(false);
+      if (authVersion.current === versionAtRequestStart) setLoading(false);
     }
   }, []);
 
@@ -33,20 +37,30 @@ export function AuthProvider({ children }) {
     loadUser();
   }, [loadUser]);
 
-  // Use this (not setUserState) for any intentional, direct auth change —
-  // e.g. right after a successful login response.
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      authVersion.current += 1;
+      setUserState(null);
+      setLoading(false);
+    };
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
+  }, []);
+
   const setUser = (nextUser) => {
     authVersion.current += 1;
     setUserState(nextUser);
+    setLoading(false);
   };
 
   const logout = async () => {
     authVersion.current += 1;
     try {
-      await logoutUser(); // POST /auth/logout — clears cookies + DB refresh token hash
+      await logoutUser();
     } finally {
       queryClient.clear();
       setUserState(null);
+      setLoading(false);
     }
   };
 
