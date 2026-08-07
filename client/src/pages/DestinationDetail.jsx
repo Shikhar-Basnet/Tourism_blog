@@ -11,12 +11,13 @@ import {
   Compass,
   Images,
 } from "lucide-react";
+import { DetailSkeleton } from "../components/LoadingState.jsx";
 import { fetchDestinationBySlug, toggleDestinationLike } from "../services/destinationService.js";
 import WeatherWidget from "../components/WeatherWidget.jsx";
 import DestinationMap from "../components/DestinationMap.jsx";
 import LikeButton from "../components/LikeButton.jsx";
 import CommentSection from "../components/CommentSection.jsx";
-import { DetailSkeleton } from "../components/LoadingState.jsx";
+import RelatedDestinations from "../components/RelatedDestinations.jsx";
 
 // Icon "chip" backgrounds — one accent per fact type, so the page reads
 // as more than a wall of gray-and-blue. Written as full literal class
@@ -279,6 +280,7 @@ export default function DestinationDetail() {
             </div>
 
             <CommentSection targetType="Destination" targetId={dest._id} />
+            <RelatedDestinations destinationId={dest._id} />
           </article>
 
           {/* ---------------- Right: sticky infobox sidebar — desktop only (1 of 3 columns) ---------------- */}

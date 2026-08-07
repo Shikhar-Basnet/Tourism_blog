@@ -15,6 +15,16 @@ export const fetchDestinationFilters = async () => {
   return data.data; // { provinces, categories }
 };
 
+export const fetchRelatedDestinations = async (id) => {
+  const { data } = await axiosClient.get(`/destinations/id/${id}/related`);
+  return data.data;
+};
+
+export const fetchNearbyDestinations = async (lat, lng, radiusKm = 50) => {
+  const { data } = await axiosClient.get("/destinations/near", { params: { lat, lng, radiusKm } });
+  return data.data;
+};
+
 export const toggleDestinationLike = async (id) => {
   const { data } = await axiosClient.post(`/destinations/id/${id}/like`);
   return data.data; // { liked, likesCount }

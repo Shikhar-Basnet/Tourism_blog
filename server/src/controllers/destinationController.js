@@ -98,6 +98,84 @@ export const toggleDestinationLike = async (req, res, next) => {
   }
 };
 
+// @desc    Related destinations — vector similarity if embeddings exist,
+//          falling back to shared category/province otherwise.
+// @route   GET /api/v1/destinations/id/:id/related
+export const getRelatedDestinations = async (req, res, next) => {
+  try {
+    const destination = await Destination.findById(req.params.id).select("+embedding");
+    if (!destination) {
+      res.status(404);
+      throw new Error("Destination not found");
+    }
+
+    let related = [];
+
+    if (destination.embedding?.length) {
+      related = await Destination.aggregate([
+        {
+          $vectorSearch: {
+            index: "destination_vector_index",
+            path: "embedding",
+            queryVector: destination.embedding,
+            numCandidates: 50,
+            limit: 4,
+          },
+        },
+        { $match: { _id: { $ne: destination._id } } },
+        { $limit: 3 },
+        { $project: { title: 1, slug: 1, province: 1, gallery: 1, category: 1 } },
+      ]);
+    }
+
+    if (related.length === 0) {
+      related = await Destination.find({
+        _id: { $ne: destination._id },
+        $or: [{ category: { $in: destination.category } }, { province: destination.province }],
+      })
+        .limit(3)
+        .select("title slug province gallery category");
+    }
+
+    res.json({ success: true, data: related });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Destinations near a point, nearest-first, with distance in km
+// @route   GET /api/v1/destinations/near?lat=..&lng=..&radiusKm=50
+export const getNearbyDestinations = async (req, res, next) => {
+  try {
+    const { lat, lng, radiusKm = 50, limit = 6 } = req.query;
+    if (lat == null || lng == null) {
+      res.status(400);
+      throw new Error("lat and lng query params are required");
+    }
+
+    const raw = await Destination.aggregate([
+      {
+        $geoNear: {
+          near: { type: "Point", coordinates: [Number(lng), Number(lat)] },
+          distanceField: "distanceMeters",
+          maxDistance: Number(radiusKm) * 1000,
+          spherical: true,
+        },
+      },
+      { $limit: Number(limit) },
+    ]);
+
+    const data = raw.map((d) => ({
+      ...d,
+      distanceKm: Math.round((d.distanceMeters / 1000) * 10) / 10,
+    }));
+
+    res.json({ success: true, count: data.length, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // @desc    Create destination — staff only. Accepts multiple uploaded images
 //          (req.files, field name "images") which become the initial gallery.
 // @route   POST /api/v1/destinations

@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { fetchBlogBySlug, toggleBlogLike } from "../services/blogService.js";
 import LikeButton from "../components/LikeButton.jsx";
 import CommentSection from "../components/CommentSection.jsx";
+import BlogCard from "../components/BlogCard.jsx";
 import { DetailSkeleton } from "../components/LoadingState.jsx";
 
 export default function BlogDetail() {
@@ -93,14 +94,7 @@ export default function BlogDetail() {
           <h2 className="mb-4 text-lg font-medium text-gray-900">Related posts</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {data.relatedPosts.map((post) => (
-              <Link
-                key={post._id}
-                to={`/blogs/${post.slug}`}
-                className="block rounded-xl bg-white p-4 shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]"
-              >
-                <p className="line-clamp-2 text-sm font-medium text-gray-900">{post.title}</p>
-                <p className="mt-1 text-xs text-gray-600">{post.readingTimeMinutes} min read</p>
-              </Link>
+              <BlogCard key={post._id} blog={post} />
             ))}
           </div>
         </section>

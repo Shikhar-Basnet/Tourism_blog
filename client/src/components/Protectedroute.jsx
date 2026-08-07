@@ -1,12 +1,17 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
+import { PageLoader } from "./LoadingState.jsx";
 
 export default function ProtectedRoute({ children, roles }) {
   const { isAuthenticated, hasRole, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return <div className="p-10 text-center text-gray-600">Checking session...</div>;
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-16">
+        <PageLoader title="Checking session" subtitle="Confirming you're signed in before continuing." />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

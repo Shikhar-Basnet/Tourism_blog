@@ -59,7 +59,7 @@ export default function AdminOverview() {
                     <li key={c._id} className="text-sm">
                       <p className="text-gray-900">
                         <span className="font-medium">{c.author?.name || "Unknown"}</span>{" "}
-                        <span className="text-gray-600">on {c.targetType.toLowerCase()} "{c.targetId?.title || "deleted"}:"</span>
+                        <span className="text-gray-600">on {c.targetType.toLowerCase()} "{c.targetId?.title || "deleted"}"</span>
                       </p>
                       <p className="mt-0.5 line-clamp-1 text-gray-600 italic">{c.content}</p>
                     </li>

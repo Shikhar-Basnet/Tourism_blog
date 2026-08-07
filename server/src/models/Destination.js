@@ -24,12 +24,17 @@ const destinationSchema = new mongoose.Schema(
       lat: { type: Number, required: true },
       lng: { type: Number, required: true },
     },
+    location: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      coordinates: { type: [Number] }, // [lng, lat] — GeoJSON order, NOT [lat, lng]
+    },
     gallery: [{ type: String }],
     tags: [{ type: String }],
     featured: { type: Boolean, default: false },
 
     // Same toggle-based like pattern as Blog — see Blog.js for why.
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    embedding: { type: [Number], select: false },
   },
   {
     timestamps: true,
@@ -50,5 +55,14 @@ destinationSchema.pre("validate", function (next) {
 });
 
 destinationSchema.index({ title: "text", description: "text", tags: "text" });
+
+destinationSchema.pre("save", function (next) {
+  if (this.coordinates?.lat != null && this.coordinates?.lng != null) {
+    this.location = { type: "Point", coordinates: [this.coordinates.lng, this.coordinates.lat] };
+  }
+  next();
+});
+
+destinationSchema.index({ location: "2dsphere" });
 
 export default mongoose.model("Destination", destinationSchema);

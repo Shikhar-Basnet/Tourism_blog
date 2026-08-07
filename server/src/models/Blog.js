@@ -27,6 +27,7 @@ const blogSchema = new mongoose.Schema(
     // (Previously this was a raw incrementing counter with no per-user
     // tracking, which let one account click "like" unlimited times.)
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    embedding: { type: [Number], select: false },
 
     seo: {
       metaTitle: { type: String, trim: true },
