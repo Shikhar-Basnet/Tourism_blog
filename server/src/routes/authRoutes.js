@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import passport from "../config/Passport.js";
 import {
   googleCallback,
@@ -11,6 +12,17 @@ import {
 import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
+
+// The global /api limiter (300 req/15min) is far too loose for a
+// credential-guessing target. This scopes a much tighter limit to just
+// the staff login route, keyed by IP — 5 attempts per 15 minutes.
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many login attempts. Try again later." },
+});
 
 // --- Google OAuth ---
 router.get("/google", (req, res, next) => {
@@ -43,7 +55,7 @@ router.get(
 );
 
 // --- Staff (Admin/Editor) email+password login ---
-router.post("/admin/login", adminLogin);
+router.post("/admin/login", adminLoginLimiter, adminLogin);
 
 // --- Session management ---
 router.post("/refresh", refresh);

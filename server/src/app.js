@@ -6,7 +6,6 @@ import morgan from "morgan";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
-import path from "path";
 import passport from "./config/passport.js";
 import destinationRoutes from "./routes/destinationRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
@@ -19,7 +18,6 @@ import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 
-// --- Security & core middleware ---
 app.use(helmet());
 app.use(
   cors({
@@ -44,15 +42,12 @@ const apiLimiter = rateLimit({
 });
 app.use("/api", apiLimiter);
 
-// Stateless — we never call passport.session(), auth state lives entirely in our JWT cookies
 app.use(passport.initialize());
 
-// --- Health check ---
 app.get("/api/v1/health", (req, res) => {
   res.json({ success: true, message: "Nepal Tourism API is running" });
 });
 
-// --- Routes (add more as modules grow: /blogs, /reviews, /weather...) ---
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/destinations", destinationRoutes);
@@ -61,9 +56,10 @@ app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/admin/users", userRoutes);
 
-app.use("/uploads", express.static(path.resolve("uploads")));
+// Images now live on Cloudinary and are served from res.cloudinary.com
+// directly — the local /uploads static route and the uploads/ directory
+// on disk are no longer needed.
 
-// --- Error handling (must be last) ---
 app.use(notFound);
 app.use(errorHandler);
 

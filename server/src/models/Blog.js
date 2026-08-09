@@ -6,14 +6,13 @@ const blogSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     slug: { type: String, unique: true, index: true },
     excerpt: { type: String, trim: true, maxlength: 300 },
-    content: { type: String, required: true }, // markdown or rich-text HTML from the editor
+    content: { type: String, required: true },
     featuredImage: { type: String },
 
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
     tags: [{ type: String, lowercase: true, trim: true }],
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
-    // Destinations this post references — powers "related destinations" on the blog side
     relatedDestinations: [{ type: mongoose.Schema.Types.ObjectId, ref: "Destination" }],
 
     status: { type: String, enum: ["draft", "published"], default: "draft" },
@@ -22,10 +21,6 @@ const blogSchema = new mongoose.Schema(
     readingTimeMinutes: { type: Number, default: 1 },
     views: { type: Number, default: 0 },
 
-    // Toggle-based likes: one entry per user who has liked this post, so a
-    // single account can only ever count once and can un-like to remove it.
-    // (Previously this was a raw incrementing counter with no per-user
-    // tracking, which let one account click "like" unlimited times.)
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     embedding: { type: [Number], select: false },
 
@@ -54,7 +49,6 @@ blogSchema.pre("validate", function (next) {
   next();
 });
 
-// Recompute reading time whenever content changes — ~200 words/minute, minimum 1 min
 blogSchema.pre("save", function (next) {
   if (this.isModified("content")) {
     const wordCount = this.content.trim().split(/\s+/).filter(Boolean).length;
@@ -67,5 +61,9 @@ blogSchema.pre("save", function (next) {
 });
 
 blogSchema.index({ title: "text", excerpt: "text", tags: "text" });
+
+// getBlogs filters on status and sorts by publishedAt on nearly every
+// request — this compound index covers both in one pass.
+blogSchema.index({ status: 1, publishedAt: -1 });
 
 export default mongoose.model("Blog", blogSchema);

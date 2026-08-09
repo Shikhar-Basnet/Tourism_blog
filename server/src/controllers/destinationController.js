@@ -1,31 +1,45 @@
 import Destination from "../models/Destination.js";
+import { deleteCloudinaryImage } from "../middlewares/uploadMiddleware.js";
+import { cacheGetOrSet, cacheInvalidate } from "../config/cache.js";
+
+const MAX_LIMIT = 100;
 
 // @desc    Get all destinations (supports pagination + basic filters)
 // @route   GET /api/v1/destinations
 export const getDestinations = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, province, category, search } = req.query;
+    const { page = 1, province, category, search } = req.query;
+    const limit = Math.min(Number(req.query.limit) || 12, MAX_LIMIT);
 
     const query = {};
     if (province) query.province = province;
     if (category) query.category = category;
     if (search) query.$text = { $search: search };
 
-    const destinations = await Destination.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    // Cached per unique combination of filters/page — search queries are
+    // deliberately excluded from the cache key space growing unbounded by
+    // capping TTL short (30s), since search terms vary far more than
+    // province/category browsing.
+    const cacheKey = `destinations:list:${page}:${limit}:${province || ""}:${category || ""}:${search || ""}`;
 
-    const total = await Destination.countDocuments(query);
+    const result = await cacheGetOrSet(cacheKey, 30, async () => {
+      const destinations = await Destination.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
 
-    res.json({
-      success: true,
-      count: destinations.length,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit),
-      data: destinations,
+      const total = await Destination.countDocuments(query);
+
+      return {
+        count: destinations.length,
+        total,
+        page: Number(page),
+        pages: Math.ceil(total / limit),
+        data: destinations,
+      };
     });
+
+    res.json({ success: true, ...result });
   } catch (err) {
     next(err);
   }
@@ -55,14 +69,18 @@ export const getDestinationBySlug = async (req, res, next) => {
 // @route   GET /api/v1/destinations/meta/filters
 export const getDestinationFilters = async (req, res, next) => {
   try {
-    const [provinces, categories] = await Promise.all([
-      Destination.distinct("province"),
-      Destination.distinct("category"),
-    ]);
-    res.json({
-      success: true,
-      data: { provinces: provinces.sort(), categories: categories.sort() },
+    // Provinces/categories change only when staff add a destination in a
+    // new one — a 5-minute cache is safe and cuts two distinct() scans
+    // down to once every 5 minutes instead of on every page load.
+    const data = await cacheGetOrSet("destinations:filters", 300, async () => {
+      const [provinces, categories] = await Promise.all([
+        Destination.distinct("province"),
+        Destination.distinct("category"),
+      ]);
+      return { provinces: provinces.sort(), categories: categories.sort() };
     });
+
+    res.json({ success: true, data });
   } catch (err) {
     next(err);
   }
@@ -72,22 +90,19 @@ export const getDestinationFilters = async (req, res, next) => {
 // @route   POST /api/v1/destinations/id/:id/like
 export const toggleDestinationLike = async (req, res, next) => {
   try {
-    const destination = await Destination.findById(req.params.id);
+    const userId = req.user._id;
+
+    const alreadyLiked = await Destination.exists({ _id: req.params.id, likedBy: userId });
+
+    const update = alreadyLiked
+      ? { $pull: { likedBy: userId } }
+      : { $addToSet: { likedBy: userId } };
+
+    const destination = await Destination.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!destination) {
       res.status(404);
       throw new Error("Destination not found");
     }
-
-    const userId = req.user._id.toString();
-    const alreadyLiked = destination.likedBy.some((id) => id.toString() === userId);
-
-    if (alreadyLiked) {
-      destination.likedBy = destination.likedBy.filter((id) => id.toString() !== userId);
-    } else {
-      destination.likedBy.push(req.user._id);
-    }
-
-    await destination.save({ validateBeforeSave: false });
 
     res.json({
       success: true,
@@ -147,7 +162,8 @@ export const getRelatedDestinations = async (req, res, next) => {
 // @route   GET /api/v1/destinations/near?lat=..&lng=..&radiusKm=50
 export const getNearbyDestinations = async (req, res, next) => {
   try {
-    const { lat, lng, radiusKm = 50, limit = 6 } = req.query;
+    const { lat, lng, radiusKm = 50 } = req.query;
+    const limit = Math.min(Number(req.query.limit) || 6, MAX_LIMIT);
     if (lat == null || lng == null) {
       res.status(400);
       throw new Error("lat and lng query params are required");
@@ -162,7 +178,7 @@ export const getNearbyDestinations = async (req, res, next) => {
           spherical: true,
         },
       },
-      { $limit: Number(limit) },
+      { $limit: limit },
     ]);
 
     const data = raw.map((d) => ({
@@ -176,8 +192,7 @@ export const getNearbyDestinations = async (req, res, next) => {
   }
 };
 
-// @desc    Create destination — staff only. Accepts multiple uploaded images
-//          (req.files, field name "images") which become the initial gallery.
+// @desc    Create destination — staff only.
 // @route   POST /api/v1/destinations
 export const createDestination = async (req, res, next) => {
   try {
@@ -190,19 +205,19 @@ export const createDestination = async (req, res, next) => {
     });
 
     if (req.files?.length) {
-      body.gallery = req.files.map((f) => `/uploads/images/${f.filename}`);
+      body.gallery = req.files.map((f) => f.path);
     }
 
     const destination = await Destination.create(body);
+    await cacheInvalidate("destinations:list:*");
+    await cacheInvalidate("destinations:filters");
     res.status(201).json({ success: true, data: destination });
   } catch (err) {
     next(err);
   }
 };
 
-// @desc    Update destination — staff only. Supports adding any number of new
-//          images (req.files, field name "images") and removing existing ones
-//          by URL via a JSON-encoded "removeImages" field in the body.
+// @desc    Update destination — staff only.
 // @route   PUT /api/v1/destinations/id/:id
 export const updateDestination = async (req, res, next) => {
   try {
@@ -220,17 +235,16 @@ export const updateDestination = async (req, res, next) => {
       throw new Error("Destination not found");
     }
 
-    // Start from the existing gallery, minus anything the admin removed
     let gallery = destination.gallery || [];
     if (updates.removeImages) {
       const toRemove = JSON.parse(updates.removeImages);
       gallery = gallery.filter((url) => !toRemove.includes(url));
+      await Promise.all(toRemove.map(deleteCloudinaryImage));
     }
     delete updates.removeImages;
 
-    // Append any newly uploaded files
     if (req.files?.length) {
-      const newUrls = req.files.map((f) => `/uploads/images/${f.filename}`);
+      const newUrls = req.files.map((f) => f.path);
       gallery = [...gallery, ...newUrls];
     }
     updates.gallery = gallery;
@@ -238,13 +252,14 @@ export const updateDestination = async (req, res, next) => {
     Object.assign(destination, updates);
     await destination.save({ validateBeforeSave: true });
 
+    await cacheInvalidate("destinations:list:*");
     res.json({ success: true, data: destination });
   } catch (err) {
     next(err);
   }
 };
 
-// @desc    Delete destination
+// @desc    Delete destination — also cleans up its gallery images on Cloudinary.
 // @route   DELETE /api/v1/destinations/id/:id
 export const deleteDestination = async (req, res, next) => {
   try {
@@ -253,6 +268,8 @@ export const deleteDestination = async (req, res, next) => {
       res.status(404);
       throw new Error("Destination not found");
     }
+    await Promise.all((destination.gallery || []).map(deleteCloudinaryImage));
+    await cacheInvalidate("destinations:list:*");
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);

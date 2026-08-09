@@ -1,11 +1,13 @@
 import User from "../models/User.js";
 
 const ALL_ROLES = ["user", "editor", "admin", "superadmin"];
+const MAX_LIMIT = 100;
 
 // @route   GET /api/v1/admin/users
 export const getUsers = async (req, res, next) => {
   try {
-    const { page = 1, limit = 15, role, search } = req.query;
+    const { page = 1, role, search } = req.query;
+    const limit = Math.min(Number(req.query.limit) || 15, MAX_LIMIT);
     const query = {};
     if (role) query.role = role;
     if (search) {
@@ -19,7 +21,7 @@ export const getUsers = async (req, res, next) => {
       .select("-refreshTokenHash -password")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .limit(limit);
     const total = await User.countDocuments(query);
 
     res.json({ success: true, count: users.length, total, page: Number(page), pages: Math.ceil(total / limit), data: users });

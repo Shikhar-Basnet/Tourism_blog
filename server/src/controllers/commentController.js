@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Comment from "../models/Comment.js";
 
 const VALID_TARGETS = ["Blog", "Destination"];
@@ -25,9 +26,16 @@ export const getComments = async (req, res, next) => {
   }
 };
 
-// @desc    Create a comment — visitor accounts (role: "user") only
+// @desc    Create a comment — visitor accounts (role: "user") only.
+//          The count-then-create check is wrapped in a transaction: without
+//          it, two simultaneous requests from the same user can both read
+//          count=4 and both insert, letting someone post 6+ comments on one
+//          post. The transaction makes the read+write atomic against
+//          concurrent calls from the same user/target.
 // @route   POST /api/v1/comments
 export const createComment = async (req, res, next) => {
+  const session = await mongoose.startSession();
+
   try {
     const { targetType, targetId, content } = req.body;
 
@@ -40,28 +48,33 @@ export const createComment = async (req, res, next) => {
       throw new Error("Comment content is required");
     }
 
-    const existingCommentCount = await Comment.countDocuments({
-      author: req.user._id,
-      targetType,
-      targetId,
-    });
+    let comment;
 
-    if (existingCommentCount >= MAX_COMMENTS_PER_USER) {
-      res.status(400);
-      throw new Error("You can only leave up to 5 comments on this post");
-    }
+    await session.withTransaction(async () => {
+      const existingCommentCount = await Comment.countDocuments({
+        author: req.user._id,
+        targetType,
+        targetId,
+      }).session(session);
 
-    const comment = await Comment.create({
-      content: content.trim(),
-      author: req.user._id,
-      targetType,
-      targetId,
+      if (existingCommentCount >= MAX_COMMENTS_PER_USER) {
+        res.status(400);
+        throw new Error("You can only leave up to 5 comments on this post");
+      }
+
+      const created = await Comment.create(
+        [{ content: content.trim(), author: req.user._id, targetType, targetId }],
+        { session }
+      );
+      comment = created[0];
     });
 
     await comment.populate("author", "name avatar role");
     res.status(201).json({ success: true, data: comment });
   } catch (err) {
     next(err);
+  } finally {
+    session.endSession();
   }
 };
 

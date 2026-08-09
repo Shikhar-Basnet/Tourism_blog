@@ -32,7 +32,6 @@ const destinationSchema = new mongoose.Schema(
     tags: [{ type: String }],
     featured: { type: Boolean, default: false },
 
-    // Same toggle-based like pattern as Blog — see Blog.js for why.
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     embedding: { type: [Number], select: false },
   },
@@ -55,6 +54,11 @@ destinationSchema.pre("validate", function (next) {
 });
 
 destinationSchema.index({ title: "text", description: "text", tags: "text" });
+
+// getDestinations filters directly on these — without indexes every
+// filtered list request was a full collection scan.
+destinationSchema.index({ province: 1 });
+destinationSchema.index({ category: 1 });
 
 destinationSchema.pre("save", function (next) {
   if (this.coordinates?.lat != null && this.coordinates?.lng != null) {

@@ -15,6 +15,10 @@ export default function ManageUsers() {
     const [role, setRole] = useState("");
     const [search, setSearch] = useState("");
     const [banner, setBanner] = useState(null);
+    // Holds the target user object (not just an id) while the confirm modal
+    // is open, so the modal can show their name and the correct "Deactivate"
+    // vs "Reactivate" wording without re-fetching anything.
+    const [pendingToggleUser, setPendingToggleUser] = useState(null);
     const debouncedSearch = useDebounce(search, 400);
     const queryClient = useQueryClient();
 
@@ -41,10 +45,19 @@ export default function ManageUsers() {
         mutationFn: (id) => toggleUserActive(id),
         onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+            setPendingToggleUser(null);
             showBanner("success", result.isActive ? "User reactivated." : "User deactivated.");
         },
-        onError: (err) => showBanner("error", err?.response?.data?.message || "Couldn't update status."),
+        onError: (err) => {
+            showBanner("error", err?.response?.data?.message || "Couldn't update status.");
+            setPendingToggleUser(null);
+        },
     });
+
+    const confirmToggleStatus = () => {
+        if (!pendingToggleUser) return;
+        statusMutation.mutate(pendingToggleUser._id);
+    };
 
     const assignableRoles = currentUser?.role === "superadmin" ? ROLES : ROLES.filter((r) => r !== "superadmin");
 
@@ -92,7 +105,7 @@ export default function ManageUsers() {
                     <div className="divide-y divide-gray-100">
                         {data.data.map((u) => {
                             const isSelf = u._id === currentUser?.id;
-                            const isLockedForAdmin = currentUser?.role === "admin" && u.role === "superadmin"; // admins can't touch a superadmin's role or status
+                            const isLockedForAdmin = currentUser?.role === "admin" && u.role === "superadmin";
                             const canChangeRoles = currentUser?.role === "superadmin" ? !isSelf : !isSelf && !isLockedForAdmin;
                             return (
                                 <div key={u._id} className="flex items-center gap-4 py-3">
@@ -133,7 +146,7 @@ export default function ManageUsers() {
                                         )}
 
                                         <button
-                                            onClick={() => statusMutation.mutate(u._id)}
+                                            onClick={() => setPendingToggleUser(u)}
                                             disabled={isSelf || isLockedForAdmin || statusMutation.isPending}
                                             title={
                                                 isLockedForAdmin
@@ -161,6 +174,51 @@ export default function ManageUsers() {
 
                 {data && <Pagination page={data.page} pages={data.pages} onPageChange={setPage} />}
             </div>
+
+            {pendingToggleUser && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg">
+                        <h3 className="text-lg font-medium text-gray-900">
+                            {pendingToggleUser.isActive ? "Deactivate user?" : "Reactivate user?"}
+                        </h3>
+                        <p className="mt-2 text-sm text-gray-600">
+                            {pendingToggleUser.isActive ? (
+                                <>
+                                    <span className="font-medium text-gray-900">{pendingToggleUser.name}</span>{" "}
+                                    will lose access immediately and won't be able to sign back in until reactivated.
+                                </>
+                            ) : (
+                                <>
+                                    <span className="font-medium text-gray-900">{pendingToggleUser.name}</span>{" "}
+                                    will be able to sign in again.
+                                </>
+                            )}
+                        </p>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => setPendingToggleUser(null)}
+                                disabled={statusMutation.isPending}
+                                className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmToggleStatus}
+                                disabled={statusMutation.isPending}
+                                className={`rounded-full px-4 py-2 text-sm font-medium text-white disabled:opacity-60 ${
+                                    pendingToggleUser.isActive
+                                        ? "bg-red-600 hover:bg-red-700"
+                                        : "bg-emerald-600 hover:bg-emerald-700"
+                                }`}
+                            >
+                                {statusMutation.isPending
+                                    ? (pendingToggleUser.isActive ? "Deactivating..." : "Reactivating...")
+                                    : (pendingToggleUser.isActive ? "Deactivate" : "Reactivate")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

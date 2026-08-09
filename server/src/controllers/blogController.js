@@ -1,20 +1,23 @@
 import Blog from "../models/Blog.js";
+import { deleteCloudinaryImage } from "../middlewares/uploadMiddleware.js";
 
 const STAFF_ROLES = ["editor", "admin", "superadmin"];
 const isStaff = (req) => req.user && STAFF_ROLES.includes(req.user.role);
+const MAX_LIMIT = 100;
 
 // @desc    List blogs. Public visitors only ever see published posts;
 //          staff can pass ?status=draft (or any status) to review their own work.
 // @route   GET /api/v1/blogs
 export const getBlogs = async (req, res, next) => {
   try {
-    const { page = 1, limit = 9, category, tag, search, status } = req.query;
+    const { page = 1, category, tag, search, status } = req.query;
+    const limit = Math.min(Number(req.query.limit) || 9, MAX_LIMIT);
 
     const query = {};
     if (isStaff(req) && status) {
       query.status = status;
     } else {
-      query.status = "published"; // public/guest visitors never see drafts
+      query.status = "published";
     }
     if (category) query.category = category;
     if (tag) query.tags = tag;
@@ -25,7 +28,7 @@ export const getBlogs = async (req, res, next) => {
       .populate("author", "name avatar")
       .sort({ publishedAt: -1, createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .limit(limit);
 
     const total = await Blog.countDocuments(query);
 
@@ -57,15 +60,14 @@ export const getBlogBySlug = async (req, res, next) => {
       throw new Error("Blog not found");
     }
 
-    // Drafts are only visible to staff
     if (blog.status !== "published" && !isStaff(req)) {
       res.status(404);
       throw new Error("Blog not found");
     }
 
     if (blog.status === "published") {
+      await Blog.updateOne({ _id: blog._id }, { $inc: { views: 1 } });
       blog.views += 1;
-      await blog.save({ validateBeforeSave: false });
     }
 
     const relatedPosts = await Blog.find({
@@ -95,7 +97,7 @@ export const createBlog = async (req, res, next) => {
       try { body.tags = JSON.parse(body.tags); }
       catch { body.tags = body.tags.split(",").map((t) => t.trim()).filter(Boolean); }
     }
-    if (req.file) body.featuredImage = `/uploads/images/${req.file.filename}`;
+    if (req.file) body.featuredImage = req.file.path;
 
     const blog = await Blog.create(body);
     res.status(201).json({ success: true, data: blog });
@@ -117,17 +119,18 @@ export const updateBlog = async (req, res, next) => {
     const blog = await Blog.findById(req.params.id);
     if (!blog) { res.status(404); throw new Error("Blog not found"); }
 
-    // "removeFeaturedImage" is a string over multipart form-data ("true"/"false")
     const removeFeaturedImage = updates.removeFeaturedImage === "true";
     delete updates.removeFeaturedImage;
 
+    const previousImage = blog.featuredImage;
     Object.assign(blog, updates);
 
-    // A newly uploaded file always wins; otherwise honor an explicit removal.
     if (req.file) {
-      blog.featuredImage = `/uploads/images/${req.file.filename}`;
+      blog.featuredImage = req.file.path;
+      if (previousImage) await deleteCloudinaryImage(previousImage);
     } else if (removeFeaturedImage) {
       blog.featuredImage = undefined;
+      if (previousImage) await deleteCloudinaryImage(previousImage);
     }
 
     await blog.save();
@@ -145,34 +148,30 @@ export const deleteBlog = async (req, res, next) => {
       res.status(404);
       throw new Error("Blog not found");
     }
+    if (blog.featuredImage) await deleteCloudinaryImage(blog.featuredImage);
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);
   }
 };
 
-// @desc    Toggle a like from the current user — one like per user max,
-//          calling this again removes it. Restricted to role "user" (see
-//          onlyPublicUsers middleware) — staff accounts can't like posts.
+// @desc    Toggle a like from the current user — one like per user max.
 // @route   POST /api/v1/blogs/id/:id/like
 export const toggleBlogLike = async (req, res, next) => {
   try {
-    const blog = await Blog.findById(req.params.id);
+    const userId = req.user._id;
+
+    const alreadyLiked = await Blog.exists({ _id: req.params.id, likedBy: userId });
+
+    const update = alreadyLiked
+      ? { $pull: { likedBy: userId } }
+      : { $addToSet: { likedBy: userId } };
+
+    const blog = await Blog.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!blog) {
       res.status(404);
       throw new Error("Blog not found");
     }
-
-    const userId = req.user._id.toString();
-    const alreadyLiked = blog.likedBy.some((id) => id.toString() === userId);
-
-    if (alreadyLiked) {
-      blog.likedBy = blog.likedBy.filter((id) => id.toString() !== userId);
-    } else {
-      blog.likedBy.push(req.user._id);
-    }
-
-    await blog.save({ validateBeforeSave: false });
 
     res.json({
       success: true,
