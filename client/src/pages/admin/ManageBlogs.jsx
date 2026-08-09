@@ -87,7 +87,7 @@ function BlogFormModal({ blog, categories, onClose, onSaved }) {
             <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-lg font-medium text-gray-900">{isEditing ? "Edit blog post" : "Add blog post"}</h2>
-                    <button onClick={onClose} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100">
+                    <button onClick={onClose} className="rounded p-1.5 text-gray-400 hover:bg-gray-100">
                         <X size={18} />
                     </button>
                 </div>
@@ -96,31 +96,31 @@ function BlogFormModal({ blog, categories, onClose, onSaved }) {
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600">Title</label>
                         <input value={fields.title} onChange={handleChange("title")} required
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                     </div>
 
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600">Excerpt</label>
                         <textarea value={fields.excerpt} onChange={handleChange("excerpt")} rows={2} maxLength={300}
-                            className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                            className="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm" />
                     </div>
 
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600">Content</label>
                         <textarea value={fields.content} onChange={handleChange("content")} rows={8} required
-                            className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                            className="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm" />
                     </div>
 
                     <div>
                         <label className="mb-2 block text-xs font-medium text-gray-600">Featured image</label>
 
                         {existingImage && !removeImage && !newFile && (
-                            <div className="group relative mb-3 aspect-video w-48 overflow-hidden rounded-lg bg-gray-100">
+                            <div className="group relative mb-3 aspect-video w-48 overflow-hidden rounded bg-gray-100">
                                 <img src={existingImage} alt="" className="h-full w-full object-cover" />
                                 <button
                                     type="button"
                                     onClick={() => setRemoveImage(true)}
-                                    className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                    className="absolute right-1 top-1 rounded bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                                 >
                                     <X size={12} />
                                 </button>
@@ -128,12 +128,12 @@ function BlogFormModal({ blog, categories, onClose, onSaved }) {
                         )}
 
                         {newFile && (
-                            <div className="relative mb-3 aspect-video w-48 overflow-hidden rounded-lg bg-emerald-50 ring-1 ring-emerald-200">
+                            <div className="relative mb-3 aspect-video w-48 overflow-hidden rounded bg-emerald-50 ring-1 ring-emerald-200">
                                 <img src={URL.createObjectURL(newFile)} alt="" className="h-full w-full object-cover" />
                                 <button
                                     type="button"
                                     onClick={() => setNewFile(null)}
-                                    className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white"
+                                    className="absolute right-1 top-1 rounded bg-black/60 p-1 text-white"
                                 >
                                     <X size={12} />
                                 </button>
@@ -156,7 +156,7 @@ function BlogFormModal({ blog, categories, onClose, onSaved }) {
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-600">Category</label>
                             <select value={fields.category} onChange={handleChange("category")}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm">
                                 <option value="">None</option>
                                 {categories?.map((c) => (
                                     <option key={c._id} value={c._id}>{c.name}</option>
@@ -166,7 +166,7 @@ function BlogFormModal({ blog, categories, onClose, onSaved }) {
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-600">Status</label>
                             <select value={fields.status} onChange={handleChange("status")}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm">
                                 <option value="draft">Draft</option>
                                 <option value="published">Published</option>
                             </select>
@@ -176,17 +176,17 @@ function BlogFormModal({ blog, categories, onClose, onSaved }) {
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600">Tags (comma separated)</label>
                         <input value={fields.tags} onChange={handleChange("tags")} placeholder="trekking, everest"
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                     </div>
 
                     <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
-                        <button type="button" onClick={onClose} className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <button type="button" onClick={onClose} className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={mutation.isPending}
-                            className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
                         >
                             {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create blog"}
                         </button>
@@ -249,7 +249,7 @@ export default function ManageBlogs() {
                     <select
                         value={statusFilter}
                         onChange={(e) => { setPage(1); setStatusFilter(e.target.value); }}
-                        className="rounded-full border border-gray-300 px-3 py-1.5 text-sm"
+                        className="rounded border border-gray-300 px-3 py-1.5 text-sm"
                     >
                         <option value="">All statuses</option>
                         <option value="draft">Draft</option>
@@ -257,7 +257,7 @@ export default function ManageBlogs() {
                     </select>
                     <button
                         onClick={() => setEditingTarget({})}
-                        className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        className="flex items-center gap-1.5 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                     >
                         <Plus size={15} /> Add blog
                     </button>
@@ -266,7 +266,7 @@ export default function ManageBlogs() {
 
             {banner && (
                 <div
-                    className={`mb-4 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
+                    className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
                         }`}
                 >
                     {banner.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
@@ -282,7 +282,7 @@ export default function ManageBlogs() {
                     <div className="divide-y divide-gray-100">
                         {data.data.map((blog) => (
                             <div key={blog._id} className="flex items-center gap-4 py-3">
-                                <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded bg-gray-100">
                                     {blog.featuredImage ? (
                                         <img src={blog.featuredImage} alt="" className="h-full w-full object-cover" />
                                     ) : (
@@ -305,13 +305,13 @@ export default function ManageBlogs() {
                                 <div className="flex flex-shrink-0 items-center gap-2">
                                     <button
                                         onClick={() => setEditingTarget(blog)}
-                                        className="flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                        className="flex items-center gap-1 rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                     >
                                         <Pencil size={13} /> Edit
                                     </button>
                                     <button
                                         onClick={() => setPendingDeleteId(blog._id)}
-                                        className="flex items-center gap-1 rounded-full border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                                        className="flex items-center gap-1 rounded border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                                     >
                                         <Trash2 size={13} /> Delete
                                     </button>
@@ -339,21 +339,21 @@ export default function ManageBlogs() {
 
             {pendingDeleteId && (
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg">
+                    <div className="w-full max-w-sm rounded-md bg-white p-6 shadow-lg">
                         <h3 className="text-lg font-medium text-gray-900">Delete blog post?</h3>
                         <p className="mt-2 text-sm text-gray-600">This action cannot be undone.</p>
                         <div className="mt-6 flex justify-end gap-3">
                             <button
                                 onClick={() => setPendingDeleteId(null)}
                                 disabled={deleteMutation.isPending}
-                                className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={() => deleteMutation.mutate(pendingDeleteId)}
                                 disabled={deleteMutation.isPending}
-                                className="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                                className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
                             >
                                 {deleteMutation.isPending ? "Deleting..." : "Delete"}
                             </button>

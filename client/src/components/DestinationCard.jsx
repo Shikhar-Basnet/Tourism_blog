@@ -8,11 +8,11 @@ export default function DestinationCard({ destination, distanceKm }) {
   return (
     <Link
       to={`/destinations/${destination.slug}`}
-      className="block overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] transition-shadow duration-200 hover:shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)]"
+      className="block overflow-hidden rounded-lg bg-white shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] transition-shadow duration-200 hover:shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)]"
     >
       <div className="relative flex h-40 items-center justify-center bg-gray-100 text-sm text-gray-600">
         {distanceKm != null && (
-          <span className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full bg-blue-600/95 px-2.5 py-1 text-xs font-medium text-white shadow">
+          <span className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded bg-blue-600/95 px-2.5 py-1 text-xs font-medium text-white shadow">
             <Navigation2 size={11} /> {distanceKm} km away
           </span>
         )}

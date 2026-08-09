@@ -183,7 +183,7 @@ export default function Navbar() {
                 <Link
                   key={href}
                   to={href}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`rounded px-4 py-2 text-sm font-medium transition-colors ${
                     active
                       ? "bg-blue-50 text-blue-600"
                       : "text-gray-900 hover:bg-gray-100"
@@ -208,7 +208,7 @@ export default function Navbar() {
                   {hasRole(...STAFF_ROLES) && (
                     <Link
                       to="/admin"
-                      className="rounded-full border border-gray-300 px-4 py-1.5 text-gray-900 transition-shadow hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]"
+                      className="rounded border border-gray-300 px-4 py-1.5 text-gray-900 transition-shadow hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]"
                     >
                       Admin Panel
                     </Link>
@@ -227,7 +227,7 @@ export default function Navbar() {
                           className="h-7 w-7 rounded-full"
                         />
                       ) : (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-md font-medium text-white">
                           {user?.name?.[0]?.toUpperCase()}
                         </div>
                       )}
@@ -235,7 +235,7 @@ export default function Navbar() {
                     </button>
 
                     {menuOpen && (
-                      <div className="absolute right-0 z-10 mt-2 w-44 rounded-xl border border-gray-200 bg-white py-2 shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)]">
+                      <div className="absolute right-0 z-10 mt-2 w-44 rounded border border-gray-200 bg-white py-2 shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)]">
                         <div className="truncate px-4 py-2 text-xs text-gray-600">{user?.email}</div>
                         <button
                           onClick={() => {
@@ -254,7 +254,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => setAuthOpen(true)}
-                  className="rounded-full border border-gray-300 px-4 py-1.5 transition-shadow hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]"
+                  className="rounded border border-gray-300 px-4 py-1.5 transition-shadow hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]"
                 >
                   Sign in
                 </button>
@@ -268,7 +268,7 @@ export default function Navbar() {
             onClick={toggleDrawer}
             aria-label="Toggle menu"
             aria-expanded={open}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 active:bg-gray-200 md:hidden"
+            className="relative flex h-9 w-9 items-center justify-center rounded bg-gray-100 active:bg-gray-200 md:hidden"
           >
             <span
               aria-hidden="true"
@@ -313,7 +313,7 @@ export default function Navbar() {
               <button
                 onClick={closeDrawer}
                 aria-label="Close menu"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 active:bg-gray-200"
+                className="flex h-8 w-8 items-center justify-center rounded bg-gray-100 active:bg-gray-200"
               >
                 <X size={18} />
               </button>
@@ -330,7 +330,7 @@ export default function Navbar() {
                     <Link
                       key={href}
                       to={href}
-                      className={`mb-0.5 flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                      className={`mb-0.5 flex min-h-[44px] items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
                         active
                           ? "bg-blue-50 text-blue-600"
                           : "text-gray-900 hover:bg-gray-100 active:bg-blue-50"
@@ -346,7 +346,7 @@ export default function Navbar() {
                 {isAuthenticated && hasRole(...STAFF_ROLES) && (
                   <Link
                     to="/admin"
-                    className={`mb-0.5 flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                    className={`mb-0.5 flex min-h-[44px] items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive("/admin")
                         ? "bg-blue-50 text-blue-600"
                         : "text-gray-900 hover:bg-gray-100 active:bg-blue-50"
@@ -376,7 +376,7 @@ export default function Navbar() {
                         className="h-9 w-9 rounded-full"
                       />
                     ) : (
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
+                      <div className="flex h-9 w-9 items-center justify-center rounded bg-blue-600 text-xs font-medium text-white">
                         {user?.name?.[0]?.toUpperCase()}
                       </div>
                     )}
@@ -386,7 +386,7 @@ export default function Navbar() {
                     </div>
                     <button
                       onClick={() => setConfirmOpen(true)}
-                      className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                      className="shrink-0 rounded px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                     >
                       Sign out
                     </button>
@@ -398,7 +398,7 @@ export default function Navbar() {
                       closeDrawer();
                       setAuthOpen(true);
                     }}
-                    className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-gray-300 text-sm font-medium text-gray-900 hover:bg-gray-50"
+                    className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded border border-gray-300 text-sm font-medium text-gray-900 hover:bg-gray-50"
                   >
                     <LogIn size={16} /> Sign in
                   </button>
@@ -420,14 +420,14 @@ export default function Navbar() {
               <button
                 onClick={() => setConfirmOpen(false)}
                 disabled={signingOut}
-                className="rounded-full px-4 py-2 text-sm text-gray-900 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded px-4 py-2 text-sm text-gray-900 hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmSignOut}
                 disabled={signingOut}
-                className="min-w-[110px] rounded-full bg-red-600 px-4 py-2 text-sm text-white hover:opacity-90 disabled:opacity-60"
+                className="min-w-[110px] rounded bg-red-600 px-4 py-2 text-sm text-white hover:opacity-90 disabled:opacity-60"
               >
                 {signingOut ? "Signing out..." : "Sign out"}
               </button>

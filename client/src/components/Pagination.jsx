@@ -9,20 +9,20 @@ export default function Pagination({ page, pages, onPageChange }) {
   return (
     <nav className="mt-10 flex items-center justify-center gap-1">
       <button onClick={() => onPageChange(page - 1)} disabled={page <= 1}
-        className="rounded-full px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-40">
+        className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-40">
         Prev
       </button>
 
       {start > 1 && (
         <>
-          <button onClick={() => onPageChange(1)} className="rounded-full px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-100">1</button>
+          <button onClick={() => onPageChange(1)} className="rounded px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-100">1</button>
           {start > 2 && <span className="px-1 text-gray-400">…</span>}
         </>
       )}
 
       {nums.map((n) => (
         <button key={n} onClick={() => onPageChange(n)}
-          className={`rounded-full px-3 py-1.5 text-sm ${n === page ? "bg-blue-600 text-white" : "text-gray-900 hover:bg-gray-100"}`}>
+          className={`rounded px-3 py-1.5 text-sm ${n === page ? "bg-blue-600 text-white" : "text-gray-900 hover:bg-gray-100"}`}>
           {n}
         </button>
       ))}
@@ -30,14 +30,14 @@ export default function Pagination({ page, pages, onPageChange }) {
       {end < pages && (
         <>
           {end < pages - 1 && <span className="px-1 text-gray-400">…</span>}
-          <button onClick={() => onPageChange(pages)} className="rounded-full px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-100">
+          <button onClick={() => onPageChange(pages)} className="rounded px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-100">
             {pages}
           </button>
         </>
       )}
 
       <button onClick={() => onPageChange(page + 1)} disabled={page >= pages}
-        className="rounded-full px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-40">
+        className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-40">
         Next
       </button>
     </nav>

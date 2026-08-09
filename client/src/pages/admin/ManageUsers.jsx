@@ -70,12 +70,12 @@ export default function ManageUsers() {
                         value={search}
                         onChange={(e) => { setPage(1); setSearch(e.target.value); }}
                         placeholder="Search name or email..."
-                        className="rounded-full border border-gray-300 px-4 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="rounded border border-gray-300 px-4 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <select
                         value={role}
                         onChange={(e) => { setPage(1); setRole(e.target.value); }}
-                        className="rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <option value="">All roles</option>
                         {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -85,7 +85,7 @@ export default function ManageUsers() {
 
             {banner && (
                 <div
-                    className={`mb-4 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
+                    className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
                         }`}
                 >
                     {banner.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
@@ -112,7 +112,7 @@ export default function ManageUsers() {
                                     {u.avatar ? (
                                         <img src={u.avatar} alt="" referrerPolicy="no-referrer" className="h-9 w-9 flex-shrink-0 rounded-full" />
                                     ) : (
-                                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
+                                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-md font-medium text-white">
                                             {u.name?.[0]?.toUpperCase()}
                                         </div>
                                     )}
@@ -133,14 +133,14 @@ export default function ManageUsers() {
                                                 value={u.role}
                                                 disabled={isSelf || roleMutation.isPending}
                                                 onChange={(e) => roleMutation.mutate({ id: u._id, role: e.target.value })}
-                                                className="rounded-full border border-gray-300 px-2.5 py-1 text-xs disabled:opacity-50"
+                                                className="rounded border border-gray-300 px-2.5 py-1 text-xs disabled:opacity-50"
                                             >
                                                 {(assignableRoles.includes(u.role) ? assignableRoles : [...assignableRoles, u.role]).map((r) => (
                                                     <option key={r} value={r}>{r}</option>
                                                 ))}
                                             </select>
                                         ) : (
-                                            <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700">
+                                            <span className="flex items-center gap-1 rounded bg-gray-100 px-2.5 py-1 text-xs text-gray-700">
                                                 <ShieldCheck size={12} /> {u.role}
                                             </span>
                                         )}
@@ -153,7 +153,7 @@ export default function ManageUsers() {
                                                     ? "Admins can't deactivate a superadmin's account"
                                                     : u.isActive ? "Deactivate user" : "Reactivate user"
                                             }
-                                            className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium disabled:opacity-40 ${u.isActive
+                                            className={`flex items-center gap-1 rounded border px-3 py-1.5 text-xs font-medium disabled:opacity-40 ${u.isActive
                                                 ? "border-red-200 text-red-600 hover:bg-red-50"
                                                 : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
                                                 }`}
@@ -177,7 +177,7 @@ export default function ManageUsers() {
 
             {pendingToggleUser && (
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg">
+                    <div className="w-full max-w-sm rounded-md bg-white p-6 shadow-lg">
                         <h3 className="text-lg font-medium text-gray-900">
                             {pendingToggleUser.isActive ? "Deactivate user?" : "Reactivate user?"}
                         </h3>
@@ -198,14 +198,14 @@ export default function ManageUsers() {
                             <button
                                 onClick={() => setPendingToggleUser(null)}
                                 disabled={statusMutation.isPending}
-                                className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmToggleStatus}
                                 disabled={statusMutation.isPending}
-                                className={`rounded-full px-4 py-2 text-sm font-medium text-white disabled:opacity-60 ${
+                                className={`rounded px-4 py-2 text-sm font-medium text-white disabled:opacity-60 ${
                                     pendingToggleUser.isActive
                                         ? "bg-red-600 hover:bg-red-700"
                                         : "bg-emerald-600 hover:bg-emerald-700"

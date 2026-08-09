@@ -135,7 +135,7 @@ export default function DestinationMap({ lat, lng, title, height = "320px" }) {
           <button
             type="button"
             onClick={handleGetDirections}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
           >
             <Navigation size={14} /> Directions from my location
           </button>
@@ -149,7 +149,7 @@ export default function DestinationMap({ lat, lng, title, height = "320px" }) {
         )}
 
         {status === "done" && route && (
-          <div className="flex items-center justify-between gap-3 rounded-xl bg-blue-50 px-3 py-2">
+          <div className="flex items-center justify-between gap-3 rounded bg-blue-50 px-3 py-2">
             <p className="text-sm text-gray-900">
               <span className="font-semibold text-blue-700">{formatDistance(route.distance)}</span>
               <span className="text-gray-600"> · {formatDuration(route.duration)} by car</span>

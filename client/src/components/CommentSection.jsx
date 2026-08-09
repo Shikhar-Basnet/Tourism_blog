@@ -123,13 +123,13 @@ export default function CommentSection({ targetType, targetId }) {
             placeholder="Share your thoughts..."
             rows={3}
             disabled={reachedCommentLimit}
-            className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            className="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
           />
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <button
               type="submit"
               disabled={addMutation.isPending || !content.trim() || reachedCommentLimit}
-              className="rounded-full bg-blue-600 px-4 py-2 text-sm font-sm text-white hover:bg-blue-700 disabled:opacity-60"
+              className="rounded bg-blue-600 px-4 py-2 text-sm font-sm text-white hover:bg-blue-700 disabled:opacity-60"
             >
               {addMutation.isPending ? "Posting..." : "Post comment"}
             </button>
@@ -183,10 +183,10 @@ export default function CommentSection({ targetType, targetId }) {
                   src={comment.author.avatar}
                   alt=""
                   referrerPolicy="no-referrer"
-                  className="h-8 w-8 flex-shrink-0 rounded-full"
+                  className="h-8 w-8 flex-shrink-0 rounded"
                 />
               ) : (
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs text-gray-600 font-bold">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-gray-200 text-xs text-gray-600 font-bold">
                   {comment.author?.name?.[0]?.toUpperCase()}
                 </div>
               )}
@@ -204,14 +204,14 @@ export default function CommentSection({ targetType, targetId }) {
                       value={editingContent}
                       onChange={(e) => setEditingContent(e.target.value)}
                       rows={3}
-                      className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => handleSaveEdit(comment._id)}
                         disabled={updateMutation.isPending || !editingContent.trim()}
-                        className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                        className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
                       >
                         {updateMutation.isPending ? "Saving..." : "Save"}
                       </button>
@@ -278,7 +278,7 @@ export default function CommentSection({ targetType, targetId }) {
 
       {pendingDeleteCommentId && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg">
+          <div className="w-full max-w-sm rounded-md bg-white p-6 shadow-lg">
             <h3 className="text-lg font-medium text-gray-900">Delete comment?</h3>
             <p className="mt-2 text-sm text-gray-600">
               This action cannot be undone. The comment will be removed permanently.
@@ -288,7 +288,7 @@ export default function CommentSection({ targetType, targetId }) {
                 type="button"
                 onClick={() => setPendingDeleteCommentId(null)}
                 disabled={deleteMutation.isPending}
-                className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -296,7 +296,7 @@ export default function CommentSection({ targetType, targetId }) {
                 type="button"
                 onClick={confirmDeleteComment}
                 disabled={deleteMutation.isPending}
-                className="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
               >
                 {deleteMutation.isPending ? "Deleting..." : "Delete"}
               </button>

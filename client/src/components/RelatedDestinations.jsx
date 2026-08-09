@@ -14,7 +14,7 @@ export default function RelatedDestinations({ destinationId }) {
 
   return (
     <section className="mb-10">
-      <h2 className="mb-4 flex items-center gap-2 text-lg font-medium text-gray-900">
+      <h2 className="m-4 flex items-center gap-2 text-lg font-medium text-gray-900">
         <Sparkles size={16} className="text-blue-600" /> You might also like
       </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

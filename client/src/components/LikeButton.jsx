@@ -46,7 +46,7 @@ export default function LikeButton({ targetId, liked, likesCount, toggleFn, quer
         onClick={handleClick}
         disabled={mutation.isPending || isStaffViewing}
         title={isStaffViewing ? "Administrators are not allowed to like content" : undefined}
-        className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors ${
+        className={`flex items-center gap-2 rounded border px-4 py-2 text-sm transition-colors ${
           liked
             ? "border-red-200 bg-red-50 text-red-600"
             : "border-gray-300 text-gray-900 hover:bg-gray-50"

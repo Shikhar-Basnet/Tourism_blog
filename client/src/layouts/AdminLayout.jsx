@@ -24,7 +24,7 @@ export default function AdminLayout() {
               .map(({ to, end, label, icon: Icon }) => (
                 <NavLink key={to} to={to} end={end}
                   className={({ isActive }) =>
-                    `flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                    `flex items-center gap-2.5 rounded px-3 py-2 text-sm font-medium transition-colors ${
                       isActive ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-100"
                     }`}>
                   <Icon size={16} /> {label}

@@ -37,7 +37,7 @@ function CategoryFormModal({ category, onClose, onSaved }) {
           <h2 className="text-lg font-medium text-gray-900">
             {isEditing ? "Edit category" : "Add category"}
           </h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100">
+          <button onClick={onClose} className="rounded p-1.5 text-gray-400 hover:bg-gray-100">
             <X size={18} />
           </button>
         </div>
@@ -49,7 +49,7 @@ function CategoryFormModal({ category, onClose, onSaved }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
           <div>
@@ -58,7 +58,7 @@ function CategoryFormModal({ category, onClose, onSaved }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
           <div>
@@ -68,18 +68,18 @@ function CategoryFormModal({ category, onClose, onSaved }) {
             <input
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
-            <button type="button" onClick={onClose} className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+            <button type="button" onClick={onClose} className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
               Cancel
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
             >
               {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create category"}
             </button>
@@ -136,7 +136,7 @@ export default function ManageCategories() {
         <h1 className="text-2xl font-normal text-gray-900">Categories</h1>
         <button
           onClick={() => setEditingTarget({})}
-          className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="flex items-center gap-1.5 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           <Plus size={15} /> Add category
         </button>
@@ -144,7 +144,7 @@ export default function ManageCategories() {
 
       {banner && (
         <div
-          className={`mb-4 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm ${
+          className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${
             banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
           }`}
         >
@@ -168,13 +168,13 @@ export default function ManageCategories() {
                 <div className="flex flex-shrink-0 items-center gap-2">
                   <button
                     onClick={() => setEditingTarget(cat)}
-                    className="flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    className="flex items-center gap-1 rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                   >
                     <Pencil size={13} /> Edit
                   </button>
                   <button
                     onClick={() => setPendingDeleteId(cat._id)}
-                    className="flex items-center gap-1 rounded-full border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                    className="flex items-center gap-1 rounded border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                   >
                     <Trash2 size={13} /> Delete
                   </button>
@@ -199,7 +199,7 @@ export default function ManageCategories() {
 
       {pendingDeleteId && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg">
+          <div className="w-full max-w-sm rounded-md bg-white p-6 shadow-lg">
             <h3 className="text-lg font-medium text-gray-900">Delete category?</h3>
             <p className="mt-2 text-sm text-gray-600">
               This action cannot be undone. Blog posts using this category will keep their reference but it won't resolve.
@@ -208,14 +208,14 @@ export default function ManageCategories() {
               <button
                 onClick={() => setPendingDeleteId(null)}
                 disabled={deleteMutation.isPending}
-                className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteMutation.mutate(pendingDeleteId)}
                 disabled={deleteMutation.isPending}
-                className="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
               >
                 {deleteMutation.isPending ? "Deleting..." : "Delete"}
               </button>

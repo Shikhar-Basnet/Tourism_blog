@@ -36,7 +36,7 @@ export default function WeatherWidget({ lat, lng }) {
   if (isLoading) {
     return (
       <div className="rounded-2xl bg-white p-5 shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]">
-        <div className="h-20 animate-pulse rounded-xl bg-sky-50" />
+        <div className="h-20 animate-pulse rounded bg-sky-50" />
       </div>
     );
   }
@@ -65,10 +65,10 @@ export default function WeatherWidget({ lat, lng }) {
       </div>
 
       <div className="flex gap-3 p-4">
-        <span className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cyan-50 px-3 py-2 text-xs font-medium text-cyan-700">
+        <span className="flex flex-1 items-center justify-center gap-1.5 rounded bg-cyan-50 px-3 py-2 text-xs font-medium text-cyan-700">
           <Droplets size={14} /> {current.relative_humidity_2m}% humidity
         </span>
-        <span className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
+        <span className="flex flex-1 items-center justify-center gap-1.5 rounded bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
           <Wind size={14} /> {Math.round(current.wind_speed_10m)} km/h
         </span>
       </div>
@@ -78,7 +78,7 @@ export default function WeatherWidget({ lat, lng }) {
           {data.daily.time.slice(0, 5).map((date, i) => {
             const { Icon: DayIcon } = describe(data.daily.weather_code[i]);
             return (
-              <div key={date} className="flex flex-col items-center gap-1 rounded-xl bg-gray-50 py-2 text-center">
+              <div key={date} className="flex flex-col items-center gap-1 rounded bg-gray-50 py-2 text-center">
                 <span className="text-[11px] text-gray-600">
                   {new Date(date).toLocaleDateString(undefined, { weekday: "short" })}
                 </span>

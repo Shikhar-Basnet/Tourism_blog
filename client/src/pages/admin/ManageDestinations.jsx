@@ -113,7 +113,7 @@ function DestinationFormModal({ destination, onClose, onSaved }) {
                     <h2 className="text-lg font-medium text-gray-900">
                         {isEditing ? "Edit destination" : "Add destination"}
                     </h2>
-                    <button onClick={onClose} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100">
+                    <button onClick={onClose} className="rounded p-1.5 text-gray-400 hover:bg-gray-100">
                         <X size={18} />
                     </button>
                 </div>
@@ -123,42 +123,42 @@ function DestinationFormModal({ destination, onClose, onSaved }) {
                         <div className="col-span-2">
                             <label className="mb-1 block text-xs font-medium text-gray-600">Title</label>
                             <input value={fields.title} onChange={handleChange("title")} required
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                         </div>
                         <div className="col-span-2">
                             <label className="mb-1 block text-xs font-medium text-gray-600">Description</label>
                             <textarea value={fields.description} onChange={handleChange("description")} rows={3} required
-                                className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                                className="w-full resize-none rounded border border-gray-300 px-3 py-2 text-sm" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-600">Province</label>
                             <input value={fields.province} onChange={handleChange("province")} required
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-600">District</label>
                             <input value={fields.district} onChange={handleChange("district")}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-600">Best time to visit</label>
                             <input value={fields.bestTimeToVisit} onChange={handleChange("bestTimeToVisit")}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-600">Altitude (m)</label>
                             <input type="number" value={fields.altitude} onChange={handleChange("altitude")}
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-600">Latitude</label>
                             <input type="number" step="any" value={fields["coordinates.lat"]} onChange={handleChange("coordinates.lat")} required
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                         </div>
                         <div>
                             <label className="mb-1 block text-xs font-medium text-gray-600">Longitude</label>
                             <input type="number" step="any" value={fields["coordinates.lng"]} onChange={handleChange("coordinates.lng")} required
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+                                className="w-full rounded border border-gray-300 px-3 py-2 text-sm" />
                         </div>
                     </div>
 
@@ -170,12 +170,12 @@ function DestinationFormModal({ destination, onClose, onSaved }) {
                         {existingImages.length > 0 && (
                             <div className="mb-3 grid grid-cols-4 gap-2">
                                 {existingImages.map((url) => (
-                                    <div key={url} className="group relative aspect-square overflow-hidden rounded-lg bg-gray-100">
+                                    <div key={url} className="group relative aspect-square overflow-hidden rounded bg-gray-100">
                                         <img src={url} alt="" className="h-full w-full object-cover" />
                                         <button
                                             type="button"
                                             onClick={() => markForRemoval(url)}
-                                            className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                                            className="absolute right-1 top-1 rounded bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                                             title="Remove image"
                                         >
                                             <X size={12} />
@@ -205,13 +205,13 @@ function DestinationFormModal({ destination, onClose, onSaved }) {
                     </div>
 
                     <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
-                        <button type="button" onClick={onClose} className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <button type="button" onClick={onClose} className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={mutation.isPending}
-                            className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
                         >
                             {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create destination"}
                         </button>
@@ -235,7 +235,7 @@ function NewFilePreview({ file, onRemove }) {
     const [url] = useState(() => URL.createObjectURL(file));
 
     return (
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-emerald-50 ring-1 ring-emerald-200">
+        <div className="relative aspect-square overflow-hidden rounded bg-emerald-50 ring-1 ring-emerald-200">
             <img
                 src={url}
                 alt=""
@@ -245,7 +245,7 @@ function NewFilePreview({ file, onRemove }) {
             <button
                 type="button"
                 onClick={onRemove}
-                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white"
+                className="absolute right-1 top-1 rounded bg-black/60 p-1 text-white"
             >
                 <X size={12} />
             </button>
@@ -288,7 +288,7 @@ export default function ManageDestinations() {
                 <h1 className="text-2xl font-normal text-gray-900">Destinations</h1>
                 <button
                     onClick={() => setEditingTarget({})}
-                    className="flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    className="flex items-center gap-1.5 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                 >
                     <Plus size={15} /> Add destination
                 </button>
@@ -296,7 +296,7 @@ export default function ManageDestinations() {
 
             {banner && (
                 <div
-                    className={`mb-4 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
+                    className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
                         }`}
                 >
                     {banner.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
@@ -311,7 +311,7 @@ export default function ManageDestinations() {
                 <div className="divide-y divide-gray-100">
                     {data.data.map((dest) => (
                         <div key={dest._id} className="flex items-center gap-4 py-3">
-                            <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                            <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded bg-gray-100">
                                 {dest.gallery?.[0] ? (
                                     <img src={dest.gallery[0]} alt="" className="h-full w-full object-cover" />
                                 ) : (
@@ -331,13 +331,13 @@ export default function ManageDestinations() {
                             <div className="flex flex-shrink-0 items-center gap-2">
                                 <button
                                     onClick={() => setEditingTarget(dest)}
-                                    className="flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                    className="flex items-center gap-1 rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                     <Pencil size={13} /> Edit
                                 </button>
                                 <button
                                     onClick={() => setPendingDeleteId(dest._id)}
-                                    className="flex items-center gap-1 rounded-full border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                                    className="flex items-center gap-1 rounded border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                                 >
                                     <Trash2 size={13} /> Delete
                                 </button>
@@ -363,7 +363,7 @@ export default function ManageDestinations() {
 
             {pendingDeleteId && (
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg">
+                    <div className="w-full max-w-sm rounded-md bg-white p-6 shadow-lg">
                         <h3 className="text-lg font-medium text-gray-900">Delete destination?</h3>
                         <p className="mt-2 text-sm text-gray-600">
                             This action cannot be undone.
@@ -372,14 +372,14 @@ export default function ManageDestinations() {
                             <button
                                 onClick={() => setPendingDeleteId(null)}
                                 disabled={deleteMutation.isPending}
-                                className="rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                className="rounded px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={() => deleteMutation.mutate(pendingDeleteId)}
                                 disabled={deleteMutation.isPending}
-                                className="rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                                className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
                             >
                                 {deleteMutation.isPending ? "Deleting..." : "Delete"}
                             </button>

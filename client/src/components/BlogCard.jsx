@@ -5,7 +5,7 @@ export default function BlogCard({ blog }) {
   return (
     <Link
       to={`/blogs/${blog.slug}`}
-      className="block overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] transition-shadow duration-200 hover:shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)]"
+      className="block overflow-hidden rounded-lg bg-white shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] transition-shadow duration-200 hover:shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)]"
     >
       <div className="flex h-40 items-center justify-center bg-gray-100 text-sm text-gray-600">
         {blog.featuredImage ? (

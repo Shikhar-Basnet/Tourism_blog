@@ -108,7 +108,7 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
         if (event.target === event.currentTarget) onClose?.();
       }}
     >
-      <div className="relative w-full max-w-[400px] overflow-hidden rounded-2xl bg-white ring-1 ring-black/5 shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200">
+      <div className="rounded-xl relative w-full max-w-[400px] overflow-hidden  bg-white ring-1 ring-black/5 shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200">
         {/* Header */}
         <div className="relative border-b border-gray-100 px-7 pb-6 pt-7">
           <button
@@ -120,7 +120,7 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
             <X size={18} />
           </button>
 
-          <div className={`mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl ${staffMode ? "bg-blue-50" : "bg-emerald-50"}`}>
+          <div className={`mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded ${staffMode ? "bg-blue-50" : "bg-emerald-50"}`}>
             <ShieldCheck size={22} className={staffMode ? "text-[#1877F2]" : "text-emerald-600"} strokeWidth={1.75} />
           </div>
           <h2 className="text-center text-xl font-semibold tracking-tight text-gray-900">
@@ -134,12 +134,12 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
         {/* Body */}
         <div className="px-7 py-6">
           {!staffMode ? (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
 
               <a href={`${googleLoginUrl}?redirect=${encodeURIComponent(resolvedRedirectTo)}`}
                 onClick={handleOAuthClick("google")}
                 aria-disabled={actionPending}
-                className={`group flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all ${actionPending
+                className={`group flex w-full items-center justify-center gap-3 rounded border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all ${actionPending
                     ? "pointer-events-none opacity-60"
                     : "hover:border-gray-300 hover:bg-gray-50 hover:shadow active:scale-[0.99]"
                   }`}
@@ -156,7 +156,7 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
               < a href={`${facebookLoginUrl}?redirect=${encodeURIComponent(resolvedRedirectTo)}`}
                 onClick={handleOAuthClick("facebook")}
                 aria-disabled={actionPending}
-                className={`flex w-full items-center justify-center gap-3 rounded-xl bg-[#1877F2] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all ${actionPending
+                className={`flex w-full items-center justify-center gap-3 rounded bg-[#1877F2] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all ${actionPending
                     ? "pointer-events-none opacity-60"
                     : "hover:bg-[#166FE5] hover:shadow active:scale-[0.99]"
                   }`}
@@ -184,7 +184,7 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
                 type="button"
                 onClick={handleStaffToggle}
                 disabled={actionPending}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Sign in as staff
               </button>
@@ -192,7 +192,7 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
           ) : (
             <form onSubmit={handleStaffLogin} className="space-y-4">
               {error && (
-                <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-3.5 py-2.5 text-sm text-red-600">
+                <div className="flex items-start gap-2 rounded border border-red-100 bg-red-50 px-3.5 py-2.5 text-sm text-red-600">
                   <span>{error}</span>
                 </div>
               )}
@@ -210,7 +210,7 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
                   required
                   autoComplete="email"
                   disabled={submitting}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-[#1877F2] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1877F2]/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-[#1877F2] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1877F2]/10 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
 
@@ -228,7 +228,7 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
                     required
                     autoComplete="current-password"
                     disabled={submitting}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-[#1877F2] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1877F2]/10 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded border border-gray-200 bg-gray-50 px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-[#1877F2] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1877F2]/10 disabled:cursor-not-allowed disabled:opacity-60"
                   />
                   <button
                     type="button"
@@ -246,7 +246,7 @@ export default function AuthModal({ isOpen, onClose, redirectTo }) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1877F2] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#166FE5] active:scale-[0.99] active:bg-[#125FCB] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded bg-[#1877F2] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#166FE5] active:scale-[0.99] active:bg-[#125FCB] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting && <Loader2 size={16} className="animate-spin" />}
                 {submitting ? "Signing in..." : "Sign in"}
