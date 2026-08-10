@@ -11,6 +11,7 @@ import Pagination from "../components/Pagination.jsx";
 import { CardSkeleton } from "../components/LoadingState.jsx";
 
 const LIMIT = 9;
+const SITE_URL = "https://www.nepaltourism.example";
 
 export default function Destinations() {
   const [search, setSearch] = useState("");
@@ -48,14 +49,62 @@ export default function Destinations() {
   const nearbyIds = new Set((nearby || []).map((d) => d._id));
   const mainList = (data?.data || []).filter((d) => !nearbyIds.has(d._id));
 
+  // Page 1, unfiltered, is the canonical URL — filtered/paginated views stay
+  // out of the index to avoid duplicate-content and thin-content pages.
+  const isCanonicalView = page === 1 && !search && !province && !category;
+  const canonicalUrl = `${SITE_URL}/destinations`;
+  const metaDescription =
+    "Browse verified destinations across Nepal — filter by province and category, or find spots within 50km of your current location. Altitude, budget, and season for every listing.";
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
+    <div className="mx-auto max-w-7xl px-4 py-8">
       <Helmet>
-        <title>Explore Destinations | Nepal Tourism</title>
-        <meta name="description" content="Search and filter destinations across Nepal by province and category." />
+        <title>Explore Destinations in Nepal | Nepal Tourism</title>
+        <meta name="description" content={metaDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        {!isCanonicalView && <meta name="robots" content="noindex, follow" />}
+
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Explore Destinations in Nepal | Nepal Tourism" />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+
+        {isCanonicalView && data?.data?.length > 0 && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              itemListElement: data.data.map((dest, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                url: `${SITE_URL}/destinations/${dest.slug}`,
+                name: dest.title,
+              })),
+            })}
+          </script>
+        )}
+
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+              { "@type": "ListItem", position: 2, name: "Destinations", item: canonicalUrl },
+            ],
+          })}
+        </script>
       </Helmet>
 
-      <h1 className="mb-6 text-2xl font-normal text-gray-900">Explore Destinations</h1>
+      <nav aria-label="Breadcrumb" className="mb-3 text-xs text-gray-500">
+        <a href="/" className="transition-colors hover:text-blue-600">Home</a> / <span className="text-gray-900">Destinations</span>
+      </nav>
+
+      <h1 className="mb-2 text-2xl font-normal text-gray-900">Explore Destinations</h1>
+      <p className="mb-6 max-w-2xl text-sm text-gray-600">
+        Every listing below is checked for accuracy — province, altitude, entry fees,
+        and the best season to go — so you can plan with real information, not guesswork.
+      </p>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
@@ -65,14 +114,14 @@ export default function Destinations() {
             value={search}
             onChange={(e) => updateAndResetPage(setSearch)(e.target.value)}
             placeholder="Search destinations..."
-            className="w-full rounded border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full touch-manipulation rounded-md border border-gray-300 py-2.5 pl-10 pr-4 text-sm transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <select
           value={province}
           onChange={(e) => updateAndResetPage(setProvince)(e.target.value)}
-          className="rounded border border-gray-300 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="touch-manipulation rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All provinces</option>
           {filters?.provinces?.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -81,7 +130,7 @@ export default function Destinations() {
         <select
           value={category}
           onChange={(e) => updateAndResetPage(setCategory)(e.target.value)}
-          className="rounded border border-gray-300 px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="touch-manipulation rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All categories</option>
           {filters?.categories?.map((c) => <option key={c} value={c}>{c}</option>)}

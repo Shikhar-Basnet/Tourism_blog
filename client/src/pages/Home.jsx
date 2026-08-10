@@ -20,28 +20,20 @@ import BlogCard from "../components/BlogCard.jsx";
 import WeatherWidget from "../components/WeatherWidget.jsx";
 import { CardSkeleton } from "../components/LoadingState.jsx";
 
-// The Google-style elevation shadow already used everywhere in this app.
 const CARD_SHADOW = "shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]";
 
 // TODO: point this at your real production domain once you have one —
-// it feeds the canonical link and Open Graph/Twitter tags below.
+// feeds the canonical link, Open Graph/Twitter tags, and JSON-LD below.
 const SITE_URL = "https://www.nepaltourism.example";
 
-// TODO: replace with your own Cloudinary asset URLs (f_auto,q_auto keeps
-// them auto-optimized for format/quality, which helps Core Web Vitals —
-// LCP/CLS both factor into Google's ranking signals and AdSense's site
-// quality checks). Keep this to 5-6 images; more slows the initial load.
 const HERO_SLIDES = [
+  "https://res.cloudinary.com/dzvmjk5h/image/upload/v1786271369/nepal-tourism/q1u3k9vfl0jvlfaky714.jpg",
   "https://res.cloudinary.com/dzvmjk5h/image/upload/v1786272089/Pokhara.jpg",
-  "https://res.cloudinary.com/dzvmjk5h/image/upload/v1786272089/Mt_Everest.jpg",
-  "https://res.cloudinary.com/dzvmjk5h/image/upload/v1786272089/Badimalika.webp",
+  "https://res.cloudinary.com/dzvmjk5h/image/upload/v1786263080/nepal-tourism/jqgjh5cu5noblna2j6zm.jpg",
+  "https://res.cloudinary.com/dzvmjk5h/image/upload/v1786263081/nepal-tourism/zeknd2gmvptdn8zturmy.jpg",
   "https://res.cloudinary.com/dzvmjk5h/image/upload/v1786272077/Mustang.jpg",
 ];
 
-// Real elevations from the destinations already seeded in the app, used as
-// small waypoint labels between sections — Everest Base Camp down to the
-// Terai lowlands — so the divider encodes something true about the content
-// instead of an arbitrary 01/02/03 sequence.
 const WAYPOINTS = [
   { m: "5,364", place: "Everest Base Camp" },
   { m: "1,400", place: "Kathmandu Durbar Square" },
@@ -62,17 +54,11 @@ function RidgeDivider({ waypoint }) {
   );
 }
 
-// Auto-rotating background slideshow — no arrows, no dots, nothing for the
-// user to operate. Purely atmospheric behind the hero text, so the images
-// are marked aria-hidden/alt="" (the headline carries the real content) —
-// that's the correct call for decorative background media per WCAG, rather
-// than forcing screen readers through five redundant image descriptions
-// before they reach the actual heading.
 function HeroSlideshow({ slides }) {
   const [index, setIndex] = useState(0);
   const reducedMotion = useRef(
     typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
   useEffect(() => {
@@ -92,9 +78,8 @@ function HeroSlideshow({ slides }) {
           alt=""
           loading={i === 0 ? "eager" : "lazy"}
           fetchpriority={i === 0 ? "high" : undefined}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[1500ms] ease-in-out ${
-            i === index ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[1500ms] ease-in-out ${i === index ? "opacity-100" : "opacity-0"
+            }`}
         />
       ))}
     </div>
@@ -120,7 +105,10 @@ export default function Home() {
 
   const totalDestinations = data?.total;
   const postcardDestinations = (data?.data || []).filter((d) => d.gallery?.[0]).slice(0, 5);
-  const canonicalUrl = typeof window !== "undefined" ? `${window.location.origin}/` : SITE_URL;
+  const canonicalUrl = `${SITE_URL}/`;
+
+  const metaDescription =
+    "Plan your trip to Nepal with a free, locally verified guide: trekking routes, UNESCO heritage sites, live weather, and real traveler stories from Everest to Pokhara.";
 
   const valueProps = [
     {
@@ -152,27 +140,18 @@ export default function Home() {
   return (
     <>
       <Helmet>
-        <title>Nepal Tourism | Trekking, Culture & Travel Guide to the Himalayas</title>
-        <meta
-          name="description"
-          content="Plan your trip to Nepal with a free, locally verified guide: trekking routes, UNESCO heritage sites, live weather, and real traveler stories from Everest to Pokhara."
-        />
+        <title>Nepal Tourism | Trekking, Culture &amp; Travel Guide to the Himalayas</title>
+        <meta name="description" content={metaDescription} />
         <link rel="canonical" href={canonicalUrl} />
 
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Nepal Tourism | Trekking, Culture & Travel Guide to the Himalayas" />
-        <meta
-          property="og:description"
-          content="A free, locally verified guide to Nepal's mountains, valleys, and cities — trekking routes, live weather, and real traveler stories."
-        />
+        <meta property="og:description" content={metaDescription} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={HERO_SLIDES[0]} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Nepal Tourism | Trekking, Culture & Travel Guide to the Himalayas" />
-        <meta
-          name="twitter:description"
-          content="A free, locally verified guide to Nepal's mountains, valleys, and cities."
-        />
+        <meta name="twitter:description" content={metaDescription} />
         <meta name="twitter:image" content={HERO_SLIDES[0]} />
 
         <script type="application/ld+json">
@@ -181,13 +160,28 @@ export default function Home() {
             "@type": "WebSite",
             name: "Nepal Tourism",
             url: canonicalUrl,
-            description:
-              "A free, locally verified travel guide to Nepal — destinations, trekking routes, live weather, and traveler stories.",
+            description: metaDescription,
+            potentialAction: {
+              "@type": "SearchAction",
+              target: `${SITE_URL}/destinations?search={search_term_string}`,
+              "query-input": "required name=search_term_string",
+            },
+          })}
+        </script>
+
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "TravelAgency",
+            name: "Nepal Tourism",
+            url: canonicalUrl,
+            areaServed: { "@type": "Country", name: "Nepal" },
+            description: metaDescription,
           })}
         </script>
       </Helmet>
 
-      {/* ---------------- Hero: full-bleed auto slideshow, no controls ---------------- */}
+      {/* ---------------- Hero ---------------- */}
       <section className="relative isolate flex min-h-[520px] items-center overflow-hidden md:min-h-[620px]">
         <HeroSlideshow slides={HERO_SLIDES} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/40 to-black/20" aria-hidden="true" />
@@ -205,13 +199,13 @@ export default function Home() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/destinations"
-              className="touch-manipulation flex items-center gap-2 rounded bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-blue-700 active:scale-[0.97] active:bg-blue-800"
+              className="touch-manipulation flex items-center gap-2 rounded-md bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-blue-700 hover:shadow-lg active:scale-[0.97] active:bg-blue-800"
             >
               Explore destinations <ArrowRight size={15} />
             </Link>
             <Link
               to="/blogs"
-              className="touch-manipulation rounded border border-white/40 bg-white/10 px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-[0.97] active:bg-white/30"
+              className="touch-manipulation rounded-md border border-white/40 bg-white/10 px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-[0.97] active:bg-white/30"
             >
               Read travel stories
             </Link>
@@ -255,7 +249,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---------------- About: substantive on-page content ---------------- */}
+      {/* ---------------- About: substantive, unique on-page content for AdSense/SEO ---------------- */}
       <section className="mx-auto max-w-6xl px-4 py-16">
         <h2 className="mb-4 text-2xl font-normal text-gray-900">A free travel guide to Nepal</h2>
         <div className="space-y-4 text-gray-600">
@@ -274,6 +268,11 @@ export default function Home() {
             an interactive map, and firsthand comments from other travelers on every
             destination page — not just a photo and a paragraph.
           </p>
+          <p>
+            New guides and destination write-ups are added regularly, and every listing
+            is reviewed by our team before publishing — no scraped listings, no
+            auto-generated descriptions.
+          </p>
         </div>
       </section>
 
@@ -284,9 +283,9 @@ export default function Home() {
           {valueProps.map(({ icon: Icon, title, body, chip }) => (
             <div
               key={title}
-              className={`touch-manipulation rounded-2xl bg-white p-5 transition-transform active:scale-[0.98] ${CARD_SHADOW}`}
+              className={`touch-manipulation rounded-lg bg-white p-5 transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${CARD_SHADOW}`}
             >
-              <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded ${chip}`}>
+              <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-md ${chip}`}>
                 <Icon size={18} />
               </div>
               <h3 className="text-sm font-medium text-gray-900">{title}</h3>
@@ -298,7 +297,7 @@ export default function Home() {
 
       <RidgeDivider waypoint={WAYPOINTS[0]} />
 
-      {/* ---------------- Postcards from Nepal (real attraction photos) ---------------- */}
+      {/* ---------------- Postcards from Nepal ---------------- */}
       {postcardDestinations.length > 0 && (
         <section className="mx-auto px-4 pb-16">
           <h2 className="mb-2 text-2xl font-normal text-gray-900">Postcards from Nepal</h2>
@@ -309,15 +308,14 @@ export default function Home() {
               <Link
                 key={dest._id}
                 to={`/destinations/${dest.slug}`}
-                className={`group relative block touch-manipulation overflow-hidden rounded-2xl transition-transform active:scale-[0.98] ${CARD_SHADOW} ${
-                  i === 0 ? "col-span-2 row-span-2 h-64 md:h-full" : "h-32 md:h-full"
-                }`}
+                className={`group relative block touch-manipulation overflow-hidden rounded-lg transition-all active:scale-[0.98] ${CARD_SHADOW} hover:shadow-md ${i === 0 ? "col-span-2 row-span-2 h-64 md:h-full" : "h-32 md:h-full"
+                  }`}
               >
                 <img
                   src={dest.gallery[0]}
                   alt={`${dest.title}, ${dest.province}`}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 group-active:scale-105"
                   loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 group-active:scale-105"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-3">
                   <p className={`font-medium text-white ${i === 0 ? "text-base" : "text-xs"}`}>{dest.title}</p>
@@ -334,7 +332,7 @@ export default function Home() {
           <h2 className="text-2xl font-normal text-gray-900">Newest destinations</h2>
           <Link
             to="/destinations"
-            className="touch-manipulation flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline active:text-blue-800"
+            className="touch-manipulation flex items-center gap-1.5 text-sm font-medium text-blue-600 transition-colors hover:underline active:text-blue-800"
           >
             View all destinations <ArrowRight size={14} />
           </Link>
@@ -358,34 +356,11 @@ export default function Home() {
         )}
       </section>
 
-      {/* ---------------- Explore by region ---------------- */}
-      {filters?.provinces?.length > 0 && (
-        <section className="mx-auto px-4 pb-16">
-          <h2 className="mb-8 text-2xl font-normal text-gray-900">Explore by region</h2>
-          <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2">
-            {filters.provinces.map((province) => (
-              <Link
-                key={province}
-                to="/destinations"
-                className={`group flex min-w-[180px] shrink-0 touch-manipulation snap-start items-center gap-3 rounded-2xl bg-white px-5 py-4 transition-all hover:shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)] active:scale-[0.98] ${CARD_SHADOW}`}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                  <MapPin size={16} />
-                </span>
-                <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600 group-active:text-blue-800">
-                  {province}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       <RidgeDivider waypoint={WAYPOINTS[1]} />
 
       {/* ---------------- Weather teaser ---------------- */}
       <section className="mx-auto px-4 pb-16">
-        <div className={`grid grid-cols-1 items-center gap-8 rounded-3xl bg-white p-6 lg:grid-cols-2 lg:p-10 ${CARD_SHADOW}`}>
+        <div className={`grid grid-cols-1 items-center gap-8 rounded-lg bg-white p-6 lg:grid-cols-2 lg:p-10 ${CARD_SHADOW}`}>
           <div>
             <p className="mb-2 text-sm font-medium text-blue-600">Know before you go</p>
             <h2 className="text-2xl font-normal text-gray-900">Kathmandu, right now</h2>
@@ -395,7 +370,7 @@ export default function Home() {
             </p>
             <Link
               to="/destinations"
-              className="mt-6 inline-flex touch-manipulation items-center gap-2 text-sm font-medium text-blue-600 hover:underline active:text-blue-800"
+              className="mt-6 inline-flex touch-manipulation items-center gap-2 text-sm font-medium text-blue-600 transition-colors hover:underline active:text-blue-800"
             >
               See weather for your destination <ArrowRight size={14} />
             </Link>
@@ -419,7 +394,7 @@ export default function Home() {
           </div>
           <Link
             to="/blogs"
-            className="touch-manipulation flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline active:text-blue-800"
+            className="touch-manipulation flex items-center gap-1.5 text-sm font-medium text-blue-600 transition-colors hover:underline active:text-blue-800"
           >
             Read all stories <ArrowRight size={14} />
           </Link>
@@ -450,7 +425,7 @@ export default function Home() {
 
       {/* ---------------- Final CTA ---------------- */}
       <section className="px-4 pb-20">
-        <div className="mx-auto rounded-3xl bg-blue-50 px-6 py-14 text-center">
+        <div className="mx-auto rounded-lg bg-blue-50 px-6 py-14 text-center">
           <span className="mx-auto mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white">
             <Compass size={20} />
           </span>
@@ -462,13 +437,13 @@ export default function Home() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/destinations"
-              className="touch-manipulation flex items-center gap-2 rounded bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-blue-700 active:scale-[0.97] active:bg-blue-800"
+              className="touch-manipulation flex items-center gap-2 rounded-md bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-blue-700 hover:shadow-lg active:scale-[0.97] active:bg-blue-800"
             >
               Start exploring <ArrowRight size={15} />
             </Link>
             <Link
               to="/blogs"
-              className="touch-manipulation rounded border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-900 transition-all hover:shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)] active:scale-[0.97] active:bg-gray-50"
+              className="touch-manipulation rounded-md border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-900 transition-all hover:shadow-md active:scale-[0.97] active:bg-gray-50"
             >
               Browse the blog
             </Link>
