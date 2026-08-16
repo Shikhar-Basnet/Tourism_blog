@@ -118,38 +118,51 @@ export const toggleDestinationLike = async (req, res, next) => {
 // @route   GET /api/v1/destinations/id/:id/related
 export const getRelatedDestinations = async (req, res, next) => {
   try {
-    const destination = await Destination.findById(req.params.id).select("+embedding");
-    if (!destination) {
+    // $vectorSearch is the most expensive query in this whole controller,
+    // and "related" content tolerates a few minutes of staleness fine —
+    // nobody notices if a related-destinations row updates 5 minutes late.
+    const related = await cacheGetOrSet(
+      `destinations:related:${req.params.id}`,
+      300,
+      async () => {
+        const destination = await Destination.findById(req.params.id).select("+embedding");
+        if (!destination) return null;
+
+        let result = [];
+
+        if (destination.embedding?.length) {
+          result = await Destination.aggregate([
+            {
+              $vectorSearch: {
+                index: "destination_vector_index",
+                path: "embedding",
+                queryVector: destination.embedding,
+                numCandidates: 50,
+                limit: 4,
+              },
+            },
+            { $match: { _id: { $ne: destination._id } } },
+            { $limit: 3 },
+            { $project: { title: 1, slug: 1, province: 1, gallery: 1, category: 1 } },
+          ]);
+        }
+
+        if (result.length === 0) {
+          result = await Destination.find({
+            _id: { $ne: destination._id },
+            $or: [{ category: { $in: destination.category } }, { province: destination.province }],
+          })
+            .limit(3)
+            .select("title slug province gallery category");
+        }
+
+        return result;
+      }
+    );
+
+    if (related === null) {
       res.status(404);
       throw new Error("Destination not found");
-    }
-
-    let related = [];
-
-    if (destination.embedding?.length) {
-      related = await Destination.aggregate([
-        {
-          $vectorSearch: {
-            index: "destination_vector_index",
-            path: "embedding",
-            queryVector: destination.embedding,
-            numCandidates: 50,
-            limit: 4,
-          },
-        },
-        { $match: { _id: { $ne: destination._id } } },
-        { $limit: 3 },
-        { $project: { title: 1, slug: 1, province: 1, gallery: 1, category: 1 } },
-      ]);
-    }
-
-    if (related.length === 0) {
-      related = await Destination.find({
-        _id: { $ne: destination._id },
-        $or: [{ category: { $in: destination.category } }, { province: destination.province }],
-      })
-        .limit(3)
-        .select("title slug province gallery category");
     }
 
     res.json({ success: true, data: related });
@@ -209,8 +222,13 @@ export const createDestination = async (req, res, next) => {
     }
 
     const destination = await Destination.create(body);
-    await cacheInvalidate("destinations:list:*");
-    await cacheInvalidate("destinations:filters");
+
+    await Promise.all([
+      cacheInvalidate("destinations:list:*"),
+      cacheInvalidate("destinations:related:*"),
+      cacheInvalidate("destinations:filters"),
+    ]);
+
     res.status(201).json({ success: true, data: destination });
   } catch (err) {
     next(err);
@@ -252,7 +270,14 @@ export const updateDestination = async (req, res, next) => {
     Object.assign(destination, updates);
     await destination.save({ validateBeforeSave: true });
 
-    await cacheInvalidate("destinations:list:*");
+    // filters is included here too — an edit can change a destination's
+    // province/category, which shifts what the filter dropdowns should show.
+    await Promise.all([
+      cacheInvalidate("destinations:list:*"),
+      cacheInvalidate("destinations:related:*"),
+      cacheInvalidate("destinations:filters"),
+    ]);
+
     res.json({ success: true, data: destination });
   } catch (err) {
     next(err);
@@ -269,7 +294,15 @@ export const deleteDestination = async (req, res, next) => {
       throw new Error("Destination not found");
     }
     await Promise.all((destination.gallery || []).map(deleteCloudinaryImage));
-    await cacheInvalidate("destinations:list:*");
+
+    // filters is included here too — deleting the last destination in a
+    // province/category should make it disappear from the filter dropdowns.
+    await Promise.all([
+      cacheInvalidate("destinations:list:*"),
+      cacheInvalidate("destinations:related:*"),
+      cacheInvalidate("destinations:filters"),
+    ]);
+
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);

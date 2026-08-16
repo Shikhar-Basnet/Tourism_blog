@@ -1,5 +1,6 @@
 import Blog from "../models/Blog.js";
 import { deleteCloudinaryImage } from "../middlewares/uploadMiddleware.js";
+import { cacheGetOrSet, cacheInvalidate } from "../config/cache.js";
 
 const STAFF_ROLES = ["editor", "admin", "superadmin"];
 const isStaff = (req) => req.user && STAFF_ROLES.includes(req.user.role);
@@ -23,23 +24,39 @@ export const getBlogs = async (req, res, next) => {
     if (tag) query.tags = tag;
     if (search) query.$text = { $search: search };
 
-    const blogs = await Blog.find(query)
-      .populate("category", "name slug")
-      .populate("author", "name avatar")
-      .sort({ publishedAt: -1, createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const fetchBlogs = async () => {
+      const blogs = await Blog.find(query)
+        .populate("category", "name slug")
+        .populate("author", "name avatar")
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit);
 
-    const total = await Blog.countDocuments(query);
+      const total = await Blog.countDocuments(query);
 
-    res.json({
-      success: true,
-      count: blogs.length,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit),
-      data: blogs,
-    });
+      return {
+        count: blogs.length,
+        total,
+        page: Number(page),
+        pages: Math.ceil(total / limit),
+        data: blogs,
+      };
+    };
+
+    // Only cache the public "published" listing — this is the view almost
+    // everyone hits (homepage, /blogs, category filters). Staff draft/status
+    // queries are low-traffic and staff expect to see their own edits
+    // immediately, so those bypass the cache entirely.
+    const result =
+      query.status === "published"
+        ? await cacheGetOrSet(
+            `blogs:list:${page}:${limit}:${category || "all"}:${tag || "all"}:${search || "none"}`,
+            30,
+            fetchBlogs
+          )
+        : await fetchBlogs();
+
+    res.json({ success: true, ...result });
   } catch (err) {
     next(err);
   }
@@ -48,6 +65,10 @@ export const getBlogs = async (req, res, next) => {
 // @desc    Single blog by slug. Increments views on published posts.
 //          Also returns up to 3 related posts sharing the same category.
 // @route   GET /api/v1/blogs/:slug
+// NOTE: deliberately NOT cached — every request increments `views`, and the
+// response carries `isLikedByCurrentUser`, which is per-visitor. Caching
+// either value would mean either losing view counts or leaking one user's
+// like state to another.
 export const getBlogBySlug = async (req, res, next) => {
   try {
     const blog = await Blog.findOne({ slug: req.params.slug })
@@ -100,6 +121,7 @@ export const createBlog = async (req, res, next) => {
     if (req.file) body.featuredImage = req.file.path;
 
     const blog = await Blog.create(body);
+    await cacheInvalidate("blogs:list:*");
     res.status(201).json({ success: true, data: blog });
   } catch (err) {
     next(err);
@@ -134,6 +156,7 @@ export const updateBlog = async (req, res, next) => {
     }
 
     await blog.save();
+    await cacheInvalidate("blogs:list:*");
     res.json({ success: true, data: blog });
   } catch (err) {
     next(err);
@@ -149,6 +172,7 @@ export const deleteBlog = async (req, res, next) => {
       throw new Error("Blog not found");
     }
     if (blog.featuredImage) await deleteCloudinaryImage(blog.featuredImage);
+    await cacheInvalidate("blogs:list:*");
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);
@@ -156,6 +180,9 @@ export const deleteBlog = async (req, res, next) => {
 };
 
 // @desc    Toggle a like from the current user — one like per user max.
+//          Not cached/invalidated here: likesCount isn't shown on the list
+//          view (BlogCard shows reading time + views, not likes), so a like
+//          toggle has nothing stale to invalidate in blogs:list:*.
 // @route   POST /api/v1/blogs/id/:id/like
 export const toggleBlogLike = async (req, res, next) => {
   try {

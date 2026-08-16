@@ -22,12 +22,24 @@ const processQueue = (error) => {
 const rawRefresh = () =>
   axios.post("/api/v1/auth/refresh", null, { withCredentials: true, timeout: 8000 });
 
+// Endpoints whose own 401 response is meaningful on its own (e.g. "wrong
+// password") and must NOT be reinterpreted as "session expired, try to
+// refresh". Without this, a bad staff-login attempt gets silently upgraded
+// into a failed refresh attempt, and the user sees the refresh endpoint's
+// generic error instead of "Invalid credentials".
+const SKIP_REFRESH_RETRY_URLS = ["/auth/refresh", "/auth/admin/login"];
+
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const { config, response } = error;
 
-    if (!response || response.status !== 401 || config?._retried || config?.url === "/auth/refresh") {
+    if (
+      !response ||
+      response.status !== 401 ||
+      config?._retried ||
+      SKIP_REFRESH_RETRY_URLS.includes(config?.url)
+    ) {
       return Promise.reject(error);
     }
 

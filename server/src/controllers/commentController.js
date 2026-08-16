@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
 import Comment from "../models/Comment.js";
+import { cacheGetOrSet, cacheInvalidate } from "../config/cache.js";
 
 const VALID_TARGETS = ["Blog", "Destination"];
 const STAFF_ROLES = ["editor", "admin", "superadmin"];
 const MAX_COMMENTS_PER_USER = 5;
+
+const commentsCacheKey = (targetType, targetId) => `comments:${targetType}:${targetId}`;
 
 // @desc    List comments for a blog or destination
 // @route   GET /api/v1/comments?targetType=Blog&targetId=<id>
@@ -16,9 +19,19 @@ export const getComments = async (req, res, next) => {
       throw new Error("targetType (Blog|Destination) and targetId are required");
     }
 
-    const comments = await Comment.find({ targetType, targetId })
-      .populate("author", "name avatar role")
-      .sort({ createdAt: -1 });
+    // Short TTL (20s) — comments are the most write-heavy content on the
+    // site, so this isn't about long-term freshness, it's about absorbing
+    // bursts of repeat views on a popular post between writes. Every write
+    // (create/update/delete) invalidates this key immediately below, so a
+    // visitor never sees a stale view of their own comment.
+    const comments = await cacheGetOrSet(
+      commentsCacheKey(targetType, targetId),
+      20,
+      async () =>
+        Comment.find({ targetType, targetId })
+          .populate("author", "name avatar role")
+          .sort({ createdAt: -1 })
+    );
 
     res.json({ success: true, count: comments.length, data: comments });
   } catch (err) {
@@ -27,11 +40,6 @@ export const getComments = async (req, res, next) => {
 };
 
 // @desc    Create a comment — visitor accounts (role: "user") only.
-//          The count-then-create check is wrapped in a transaction: without
-//          it, two simultaneous requests from the same user can both read
-//          count=4 and both insert, letting someone post 6+ comments on one
-//          post. The transaction makes the read+write atomic against
-//          concurrent calls from the same user/target.
 // @route   POST /api/v1/comments
 export const createComment = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -70,6 +78,7 @@ export const createComment = async (req, res, next) => {
     });
 
     await comment.populate("author", "name avatar role");
+    await cacheInvalidate(commentsCacheKey(targetType, targetId));
     res.status(201).json({ success: true, data: comment });
   } catch (err) {
     next(err);
@@ -97,6 +106,7 @@ export const updateComment = async (req, res, next) => {
     await comment.save();
     await comment.populate("author", "name avatar role");
 
+    await cacheInvalidate(commentsCacheKey(comment.targetType, comment.targetId));
     res.json({ success: true, data: comment });
   } catch (err) {
     next(err);
@@ -122,6 +132,7 @@ export const deleteComment = async (req, res, next) => {
     }
 
     await comment.deleteOne();
+    await cacheInvalidate(commentsCacheKey(comment.targetType, comment.targetId));
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);

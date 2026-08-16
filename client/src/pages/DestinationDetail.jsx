@@ -208,9 +208,8 @@ function GallerySlider({ images, title }) {
                 loading="lazy"
                 decoding="async"
                 onLoad={() => markLoaded(i)}
-                className={`h-full w-full touch-manipulation object-cover transition-all duration-300 active:scale-[0.98] ${
-                  loaded.has(i) ? "opacity-100" : "opacity-0"
-                }`}
+                className={`h-full w-full touch-manipulation object-cover transition-all duration-300 active:scale-[0.98] ${loaded.has(i) ? "opacity-100" : "opacity-0"
+                  }`}
               />
             </div>
           ))}
@@ -341,10 +340,10 @@ export default function DestinationDetail() {
             },
             geo: hasCoords
               ? {
-                  "@type": "GeoCoordinates",
-                  latitude: dest.coordinates.lat,
-                  longitude: dest.coordinates.lng,
-                }
+                "@type": "GeoCoordinates",
+                latitude: dest.coordinates.lat,
+                longitude: dest.coordinates.lng,
+              }
               : undefined,
             touristType: dest.category,
           })}
@@ -494,7 +493,7 @@ export default function DestinationDetail() {
             {hasCoords && (
               <section className="mb-10 lg:hidden">
                 <h2 className="mb-4 text-lg font-medium text-gray-900">Map &amp; directions</h2>
-                <DestinationMap lat={dest.coordinates.lat} lng={dest.coordinates.lng} title={dest.title} />
+                <DestinationMap key={dest._id} lat={dest.coordinates.lat} lng={dest.coordinates.lng} title={dest.title} />
               </section>
             )}
 
@@ -553,7 +552,7 @@ export default function DestinationDetail() {
 
             {hasCoords && (
               <div className="mt-6">
-                <DestinationMap lat={dest.coordinates.lat} lng={dest.coordinates.lng} title={dest.title} height="280px" />
+                <DestinationMap key={dest._id} lat={dest.coordinates.lat} lng={dest.coordinates.lng} title={dest.title} height="280px" />
               </div>
             )}
           </aside>
