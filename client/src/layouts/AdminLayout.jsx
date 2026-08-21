@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, MapPin, BookOpen, FolderTree, Users } from "lucide-react";
+import { LayoutDashboard, MapPin, BookOpen, FolderTree, Users, Mail } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.js";
 
 const links = [
@@ -7,6 +7,7 @@ const links = [
   { to: "/admin/destinations", label: "Destinations", icon: MapPin },
   { to: "/admin/blogs", label: "Blogs", icon: BookOpen },
   { to: "/admin/categories", label: "Categories", icon: FolderTree },
+  { to: "/admin/enquiries", label: "Enquiries", icon: Mail },
   { to: "/admin/users", label: "Users", icon: Users, roles: ["admin", "superadmin"] },
 ];
 

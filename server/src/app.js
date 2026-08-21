@@ -14,6 +14,7 @@ import commentRoutes from "./routes/commentRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/v1/blogs", blogRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/admin/users", userRoutes);
+app.use("/api/v1/contact", contactRoutes);
 
 // Images now live on Cloudinary and are served from res.cloudinary.com
 // directly — the local /uploads static route and the uploads/ directory

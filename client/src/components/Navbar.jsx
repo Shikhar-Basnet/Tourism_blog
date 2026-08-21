@@ -10,6 +10,7 @@ import {
   BookOpen,
   LayoutDashboard,
   LogIn,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth.js";
 
@@ -45,6 +46,7 @@ export default function Navbar() {
     { href: "/", label: "Home", icon: HomeIcon },
     { href: "/destinations", label: "Destinations", icon: MapPin },
     { href: "/blogs", label: "Blogs", icon: BookOpen },
+    { href: "/contact", label: "Contact", icon: Mail },
   ];
 
   const isActive = (href) => {
@@ -183,11 +185,10 @@ export default function Navbar() {
                 <Link
                   key={href}
                   to={href}
-                  className={`rounded px-4 py-2 text-sm font-medium transition-colors ${
-                    active
+                  className={`rounded px-4 py-2 text-sm font-medium transition-colors ${active
                       ? "bg-blue-50 text-blue-600"
                       : "text-gray-900 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   {label}
                 </Link>
@@ -330,11 +331,10 @@ export default function Navbar() {
                     <Link
                       key={href}
                       to={href}
-                      className={`mb-0.5 flex min-h-[44px] items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
-                        active
+                      className={`mb-0.5 flex min-h-[44px] items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${active
                           ? "bg-blue-50 text-blue-600"
                           : "text-gray-900 hover:bg-gray-100 active:bg-blue-50"
-                      }`}
+                        }`}
                     >
                       <Icon size={17} className={active ? "text-blue-600" : "text-gray-500"} />
                       <span className="flex-1">{label}</span>
@@ -346,11 +346,10 @@ export default function Navbar() {
                 {isAuthenticated && hasRole(...STAFF_ROLES) && (
                   <Link
                     to="/admin"
-                    className={`mb-0.5 flex min-h-[44px] items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive("/admin")
+                    className={`mb-0.5 flex min-h-[44px] items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition-colors ${isActive("/admin")
                         ? "bg-blue-50 text-blue-600"
                         : "text-gray-900 hover:bg-gray-100 active:bg-blue-50"
-                    }`}
+                      }`}
                   >
                     <LayoutDashboard
                       size={17}

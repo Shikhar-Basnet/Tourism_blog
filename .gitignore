@@ -1,8 +1,44 @@
 node_modules/
 .env
+.env.local
+.env.*.local
 ads.txt
 dist/
+build/
 logs/*.log
 uploads/*
 !uploads/.gitkeep
+
+# OS-generated
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Logs & debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Build/tooling caches
+.eslintcache
+.cache/
+.vite/
+.turbo/
+
+# Coverage / test artifacts
+coverage/
+*.lcov
+
+# Deployment platform artifacts
+.vercel
+.netlify
+
+# Certs/keys if you ever drop any in locally
+*.pem
+*.key
