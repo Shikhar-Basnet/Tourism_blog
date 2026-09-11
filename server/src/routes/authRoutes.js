@@ -1,6 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import passport from "../config/Passport.js";
+import passport from "../config/passport.js";
 import {
   googleCallback,
   facebookCallback,
