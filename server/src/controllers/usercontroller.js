@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import { sanitizeText, sanitizeObjectId, logSecurityEvent } from "../utils/security.js";
 
 const ALL_ROLES = ["user", "editor", "admin", "superadmin"];
 const MAX_LIMIT = 100;
@@ -7,24 +8,28 @@ const MAX_LIMIT = 100;
 export const getUsers = async (req, res, next) => {
   try {
     const { page = 1, role, search } = req.query;
+    const safePage = Number(page) > 0 ? Number(page) : 1;
     const limit = Math.min(Number(req.query.limit) || 15, MAX_LIMIT);
     const query = {};
-    if (role) query.role = role;
+    if (role && ALL_ROLES.includes(role)) query.role = role;
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-      ];
+      const sanitizedSearch = sanitizeText(search, 80);
+      if (sanitizedSearch) {
+        query.$or = [
+          { name: { $regex: sanitizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } },
+          { email: { $regex: sanitizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } },
+        ];
+      }
     }
 
     const users = await User.find(query)
       .select("-refreshTokenHash -password")
       .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
+      .skip((safePage - 1) * limit)
       .limit(limit);
     const total = await User.countDocuments(query);
 
-    res.json({ success: true, count: users.length, total, page: Number(page), pages: Math.ceil(total / limit), data: users });
+    res.json({ success: true, count: users.length, total, page: safePage, pages: Math.ceil(total / limit), data: users });
   } catch (err) {
     next(err);
   }
@@ -36,11 +41,13 @@ export const getUsers = async (req, res, next) => {
 // @route   PATCH /api/v1/admin/users/:id/role
 export const updateUserRole = async (req, res, next) => {
   try {
+    const targetId = sanitizeObjectId(req.params.id, "User ID");
     const { role } = req.body;
-    if (!ALL_ROLES.includes(role)) { res.status(400); throw new Error("Invalid role"); }
-    if (req.params.id === req.user._id.toString()) { res.status(400); throw new Error("You can't change your own role"); }
+    const safeRole = sanitizeText(role, 32);
+    if (!ALL_ROLES.includes(safeRole)) { res.status(400); throw new Error("Invalid role"); }
+    if (targetId === req.user._id.toString()) { res.status(400); throw new Error("You can't change your own role"); }
 
-    const target = await User.findById(req.params.id);
+    const target = await User.findById(targetId);
     if (!target) { res.status(404); throw new Error("User not found"); }
 
     if (req.user.role === "admin") {
@@ -48,14 +55,15 @@ export const updateUserRole = async (req, res, next) => {
         res.status(403);
         throw new Error("Admins can't change a superadmin's role");
       }
-      if (role === "superadmin") {
+      if (safeRole === "superadmin") {
         res.status(403);
         throw new Error("Admins can only assign roles up to 'admin'");
       }
     }
 
-    target.role = role;
+    target.role = safeRole;
     await target.save();
+    logSecurityEvent("role_changed", { actorId: req.user._id.toString(), targetId: target._id.toString(), role: safeRole });
 
     const safeUser = await User.findById(target._id).select("-refreshTokenHash -password");
     res.json({ success: true, data: safeUser });
@@ -67,9 +75,10 @@ export const updateUserRole = async (req, res, next) => {
 // @route   PATCH /api/v1/admin/users/:id/status
 export const toggleUserActive = async (req, res, next) => {
   try {
-    if (req.params.id === req.user._id.toString()) { res.status(400); throw new Error("You can't deactivate your own account"); }
+    const targetId = sanitizeObjectId(req.params.id, "User ID");
+    if (targetId === req.user._id.toString()) { res.status(400); throw new Error("You can't deactivate your own account"); }
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(targetId);
     if (!user) { res.status(404); throw new Error("User not found"); }
 
     if (req.user.role === "admin" && user.role === "superadmin") {
@@ -79,6 +88,7 @@ export const toggleUserActive = async (req, res, next) => {
 
     user.isActive = !user.isActive;
     await user.save();
+    logSecurityEvent("account_status_changed", { actorId: req.user._id.toString(), targetId: user._id.toString(), isActive: user.isActive });
 
     res.json({ success: true, data: { id: user._id, isActive: user.isActive } });
   } catch (err) {

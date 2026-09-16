@@ -25,7 +25,7 @@ const destinationSchema = new mongoose.Schema(
       lng: { type: Number, required: true },
     },
     location: {
-      type: { type: String, enum: ["Point"], default: "Point" },
+      type: { type: String, enum: ["Point"] },
       coordinates: { type: [Number] }, // [lng, lat] — GeoJSON order, NOT [lat, lng]
     },
     gallery: [{ type: String }],

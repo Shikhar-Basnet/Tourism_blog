@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Plus, X, CheckCircle2, AlertCircle, Eye } from "lucide-react";
+import { Pencil, Trash2, Plus, X, Eye } from "lucide-react";
 import {
     fetchBlogsAdmin,
     createBlog,
@@ -8,6 +8,8 @@ import {
     deleteBlog,
 } from "../../services/blogService.js";
 import { fetchCategories } from "../../services/categoryService.js";
+import { useToasts } from "../../hooks/useToasts.js";
+import Toast from "../../components/Toast.jsx";
 import Pagination from "../../components/Pagination.jsx";
 
 const LIMIT = 8;
@@ -208,7 +210,7 @@ export default function ManageBlogs() {
     const [statusFilter, setStatusFilter] = useState("");
     const [editingTarget, setEditingTarget] = useState(null);
     const [pendingDeleteId, setPendingDeleteId] = useState(null);
-    const [banner, setBanner] = useState(null);
+    const { toasts, showToast, dismiss } = useToasts();
     const queryClient = useQueryClient();
 
     const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
@@ -218,14 +220,9 @@ export default function ManageBlogs() {
         queryFn: () => fetchBlogsAdmin({ page, limit: LIMIT, status: statusFilter || undefined }),
     });
 
-    const showBanner = (type, message) => {
-        setBanner({ type, message });
-        window.setTimeout(() => setBanner(null), 4000);
-    };
-
     const invalidateAndNotify = (message) => {
         queryClient.invalidateQueries({ queryKey: ["blogs"] });
-        showBanner("success", message);
+        showToast("success", message);
     };
 
     const deleteMutation = useMutation({
@@ -233,10 +230,10 @@ export default function ManageBlogs() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["blogs"] });
             setPendingDeleteId(null);
-            showBanner("success", "Blog deleted.");
+            showToast("success", "Blog deleted.");
         },
         onError: (err) => {
-            showBanner("error", err?.response?.data?.message || "Couldn't delete blog.");
+            showToast("error", err?.response?.data?.message || "Couldn't delete blog.");
             setPendingDeleteId(null);
         },
     });
@@ -264,15 +261,7 @@ export default function ManageBlogs() {
                 </div>
             </div>
 
-            {banner && (
-                <div
-                    className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
-                        }`}
-                >
-                    {banner.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                    {banner.message}
-                </div>
-            )}
+            <Toast toasts={toasts} onDismiss={dismiss} />
 
             <div className="rounded-2xl bg-white p-6 shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]">
                 {isLoading && <p className="text-sm text-gray-600">Loading blogs...</p>}

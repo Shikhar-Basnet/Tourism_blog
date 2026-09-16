@@ -151,19 +151,19 @@ export default function Contact() {
       </Helmet>
 
       {/* Header */}
-      <section className="relative overflow-hidden bg-white px-4 py-16 text-center">
+      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.12),transparent_25%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-16 text-center">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-full bg-gradient-to-b from-blue-50/70 via-transparent to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-full bg-gradient-to-b from-brand-50/80 via-transparent to-transparent"
         />
         <div className="relative">
-          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
             <MessageSquare size={12} /> We usually reply within 1–2 business days
           </span>
-          <h1 className="text-4xl font-normal text-gray-900 md:text-5xl">
-            Let's plan your <span className="text-blue-600">Nepal</span> trip
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 md:text-5xl">
+            Let's plan your <span className="text-brand-600">Nepal</span> trip
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-gray-600">
+          <p className="mx-auto mt-3 max-w-xl text-base text-slate-600">
             Questions about a destination, a trek, or just need advice? Send us a message and our team will get back to you.
           </p>
         </div>

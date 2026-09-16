@@ -22,11 +22,11 @@ export const getDashboardStats = async (req, res, next) => {
         Destination.find().sort({ createdAt: -1 }).limit(5).select("title province createdAt"),
         Blog.countDocuments(),
         Destination.aggregate([
-          { $project: { count: { $size: "$likedBy" } } },
+          { $project: { count: { $size: { $ifNull: ["$likedBy", []] } } } },
           { $group: { _id: null, total: { $sum: "$count" } } },
         ]),
         Blog.aggregate([
-          { $project: { count: { $size: "$likedBy" } } },
+          { $project: { count: { $size: { $ifNull: ["$likedBy", []] } } } },
           { $group: { _id: null, total: { $sum: "$count" } } },
         ]),
         Comment.countDocuments(),

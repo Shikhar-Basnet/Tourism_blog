@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Plus, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Pencil, Trash2, Plus, X } from "lucide-react";
 import {
   fetchCategories,
   createCategory,
   updateCategory,
   deleteCategory,
 } from "../../services/categoryService.js";
+import { useToasts } from "../../hooks/useToasts.js";
+import Toast from "../../components/Toast.jsx";
 
 function CategoryFormModal({ category, onClose, onSaved }) {
   const isEditing = !!category;
@@ -99,7 +101,7 @@ function CategoryFormModal({ category, onClose, onSaved }) {
 export default function ManageCategories() {
   const [editingTarget, setEditingTarget] = useState(null); // null closed, {} create, {...cat} edit
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const [banner, setBanner] = useState(null);
+  const { toasts, showToast, dismiss } = useToasts();
   const queryClient = useQueryClient();
 
   const { data: categories, isLoading, isError } = useQuery({
@@ -107,14 +109,9 @@ export default function ManageCategories() {
     queryFn: fetchCategories,
   });
 
-  const showBanner = (type, message) => {
-    setBanner({ type, message });
-    window.setTimeout(() => setBanner(null), 4000);
-  };
-
   const invalidateAndClose = (message) => {
     queryClient.invalidateQueries({ queryKey: ["categories"] });
-    showBanner("success", message);
+    showToast("success", message);
   };
 
   const deleteMutation = useMutation({
@@ -122,10 +119,10 @@ export default function ManageCategories() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setPendingDeleteId(null);
-      showBanner("success", "Category deleted.");
+      showToast("success", "Category deleted.");
     },
     onError: (err) => {
-      showBanner("error", err?.response?.data?.message || "Couldn't delete category. It may still be in use by a blog post.");
+      showToast("error", err?.response?.data?.message || "Couldn't delete category. It may still be in use by a blog post.");
       setPendingDeleteId(null);
     },
   });
@@ -142,16 +139,7 @@ export default function ManageCategories() {
         </button>
       </div>
 
-      {banner && (
-        <div
-          className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${
-            banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
-          }`}
-        >
-          {banner.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-          {banner.message}
-        </div>
-      )}
+      <Toast toasts={toasts} onDismiss={dismiss} />
 
       <div className="rounded-2xl bg-white p-6 shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]">
         {isLoading && <p className="text-sm text-gray-600">Loading categories...</p>}

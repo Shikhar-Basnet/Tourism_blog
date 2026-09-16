@@ -10,6 +10,7 @@ import {
   getMe,
 } from "../controllers/authController.js";
 import { protect } from "../middlewares/authMiddleware.js";
+import { generateCsrfToken } from "../utils/generateTokens.js";
 
 const router = express.Router();
 
@@ -56,6 +57,17 @@ router.get(
 
 // --- Staff (Admin/Editor) email+password login ---
 router.post("/admin/login", adminLoginLimiter, adminLogin);
+
+router.get("/csrf-token", (req, res) => {
+  const token = generateCsrfToken();
+  res.cookie("csrfToken", token, {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 15 * 60 * 1000,
+  });
+  res.json({ success: true, data: { csrfToken: token } });
+});
 
 // --- Session management ---
 router.post("/refresh", refresh);

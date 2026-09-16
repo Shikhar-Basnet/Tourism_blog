@@ -32,11 +32,11 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <ScrollToTop />
       <Navbar />
 
-      <main className="flex-1">
+      <main className="flex-1 bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.08),transparent_28%),linear-gradient(180deg,#f8fafc_0%,#f8fafc_100%)]">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/destinations" element={<Destinations />} />
@@ -68,7 +68,7 @@ export default function App() {
             />
           </Route>
 
-          <Route path="*" element={<div className="p-10 text-center">404 - Page not found</div>} />
+          <Route path="*" element={<div className="section-shell py-20 text-center text-lg text-slate-700">404 - Page not found</div>} />
         </Routes>
       </main>
 

@@ -182,7 +182,7 @@ export default function CommentSection({ targetType, targetId }) {
                 <img
                   src={comment.author.avatar}
                   alt=""
-                  referrerPolicy="no-referrer"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   className="h-8 w-8 flex-shrink-0 rounded"
                 />
               ) : (

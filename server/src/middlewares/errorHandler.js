@@ -5,16 +5,19 @@ export const notFound = (req, res, next) => {
 
 export const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  const message = statusCode >= 500 ? "Server Error" : (err.message || "Request failed");
 
-  const message =
-    err.message ||
-    err.error?.message ||
-    (typeof err === "string" ? err : null) ||
-    "Server Error";
+  if (statusCode >= 500) {
+    console.error("[ERROR]", {
+      url: req.originalUrl,
+      method: req.method,
+      message: err.message,
+      stack: err.stack,
+    });
+  }
 
   res.status(statusCode).json({
     success: false,
     message,
-    stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
   });
 };

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, AlertCircle, ShieldCheck, Ban, RotateCcw } from "lucide-react";
+import { ShieldCheck, Ban, RotateCcw } from "lucide-react";
 import { fetchUsers, updateUserRole, toggleUserActive } from "../../services/userService.js";
 import { useAuth } from "../../hooks/useAuth.js";
+import { useToasts } from "../../hooks/useToasts.js";
+import Toast from "../../components/Toast.jsx";
 import { useDebounce } from "../../hooks/useDebounce.js";
 import Pagination from "../../components/Pagination.jsx";
 
@@ -14,7 +16,7 @@ export default function ManageUsers() {
     const [page, setPage] = useState(1);
     const [role, setRole] = useState("");
     const [search, setSearch] = useState("");
-    const [banner, setBanner] = useState(null);
+    const { toasts, showToast, dismiss } = useToasts();
     // Holds the target user object (not just an id) while the confirm modal
     // is open, so the modal can show their name and the correct "Deactivate"
     // vs "Reactivate" wording without re-fetching anything.
@@ -27,18 +29,13 @@ export default function ManageUsers() {
         queryFn: () => fetchUsers({ page, limit: LIMIT, role: role || undefined, search: debouncedSearch || undefined }),
     });
 
-    const showBanner = (type, message) => {
-        setBanner({ type, message });
-        window.setTimeout(() => setBanner(null), 4000);
-    };
-
     const roleMutation = useMutation({
         mutationFn: ({ id, role }) => updateUserRole(id, role),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-            showBanner("success", "Role updated.");
+            showToast("success", "Role updated.");
         },
-        onError: (err) => showBanner("error", err?.response?.data?.message || "Couldn't update role."),
+        onError: (err) => showToast("error", err?.response?.data?.message || "Couldn't update role."),
     });
 
     const statusMutation = useMutation({
@@ -46,10 +43,10 @@ export default function ManageUsers() {
         onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
             setPendingToggleUser(null);
-            showBanner("success", result.isActive ? "User reactivated." : "User deactivated.");
+            showToast("success", result.isActive ? "User reactivated." : "User deactivated.");
         },
         onError: (err) => {
-            showBanner("error", err?.response?.data?.message || "Couldn't update status.");
+            showToast("error", err?.response?.data?.message || "Couldn't update status.");
             setPendingToggleUser(null);
         },
     });
@@ -83,15 +80,7 @@ export default function ManageUsers() {
                 </div>
             </div>
 
-            {banner && (
-                <div
-                    className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
-                        }`}
-                >
-                    {banner.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                    {banner.message}
-                </div>
-            )}
+            <Toast toasts={toasts} onDismiss={dismiss} />
 
             <div className="rounded-2xl bg-white p-6 shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]">
                 {isLoading && <p className="text-sm text-gray-600">Loading users...</p>}
@@ -110,7 +99,7 @@ export default function ManageUsers() {
                             return (
                                 <div key={u._id} className="flex items-center gap-4 py-3">
                                     {u.avatar ? (
-                                        <img src={u.avatar} alt="" referrerPolicy="no-referrer" className="h-9 w-9 flex-shrink-0 rounded-full" />
+                                        <img src={u.avatar} alt="" referrerPolicy="strict-origin-when-cross-origin" className="h-9 w-9 flex-shrink-0 rounded-full" />
                                     ) : (
                                         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-md font-medium text-white">
                                             {u.name?.[0]?.toUpperCase()}
@@ -205,11 +194,10 @@ export default function ManageUsers() {
                             <button
                                 onClick={confirmToggleStatus}
                                 disabled={statusMutation.isPending}
-                                className={`rounded px-4 py-2 text-sm font-medium text-white disabled:opacity-60 ${
-                                    pendingToggleUser.isActive
-                                        ? "bg-red-600 hover:bg-red-700"
-                                        : "bg-emerald-600 hover:bg-emerald-700"
-                                }`}
+                                className={`rounded px-4 py-2 text-sm font-medium text-white disabled:opacity-60 ${pendingToggleUser.isActive
+                                    ? "bg-red-600 hover:bg-red-700"
+                                    : "bg-emerald-600 hover:bg-emerald-700"
+                                    }`}
                             >
                                 {statusMutation.isPending
                                     ? (pendingToggleUser.isActive ? "Deactivating..." : "Reactivating...")

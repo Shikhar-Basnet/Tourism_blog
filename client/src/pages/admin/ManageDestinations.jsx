@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Plus, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Pencil, Trash2, Plus, X } from "lucide-react";
 import {
     fetchDestinations,
     createDestination,
     updateDestination,
     deleteDestination,
 } from "../../services/destinationService.js";
+import { useToasts } from "../../hooks/useToasts.js";
+import Toast from "../../components/Toast.jsx";
 import Pagination from "../../components/Pagination.jsx";
 
 const LIMIT = 8;
@@ -257,7 +259,7 @@ export default function ManageDestinations() {
     const [page, setPage] = useState(1);
     const [editingTarget, setEditingTarget] = useState(null); // null = closed, {} = create, {...dest} = edit
     const [pendingDeleteId, setPendingDeleteId] = useState(null);
-    const [banner, setBanner] = useState(null); // { type: "success" | "error", message }
+    const { toasts, showToast, dismiss } = useToasts();
     const queryClient = useQueryClient();
 
     const { data, isLoading, isError } = useQuery({
@@ -265,20 +267,15 @@ export default function ManageDestinations() {
         queryFn: () => fetchDestinations({ page, limit: LIMIT }),
     });
 
-    const showBanner = (type, message) => {
-        setBanner({ type, message });
-        window.setTimeout(() => setBanner(null), 4000);
-    };
-
     const deleteMutation = useMutation({
         mutationFn: (id) => deleteDestination(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["destinations"] });
             setPendingDeleteId(null);
-            showBanner("success", "Destination deleted.");
+            showToast("success", "Destination deleted.");
         },
         onError: (err) => {
-            showBanner("error", err?.response?.data?.message || "Couldn't delete destination.");
+            showToast("error", err?.response?.data?.message || "Couldn't delete destination.");
         },
     });
 
@@ -294,15 +291,7 @@ export default function ManageDestinations() {
                 </button>
             </div>
 
-            {banner && (
-                <div
-                    className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
-                        }`}
-                >
-                    {banner.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                    {banner.message}
-                </div>
-            )}
+            <Toast toasts={toasts} onDismiss={dismiss} />
 
             {isLoading && <p className="text-sm text-gray-600">Loading destinations...</p>}
             {isError && <p className="text-sm text-red-600">Couldn't load destinations.</p>}
@@ -357,7 +346,7 @@ export default function ManageDestinations() {
                 <DestinationFormModal
                     destination={editingTarget._id ? editingTarget : null}
                     onClose={() => setEditingTarget(null)}
-                    onSaved={(message) => showBanner("success", message)}
+                    onSaved={(message) => showToast("success", message)}
                 />
             )}
 

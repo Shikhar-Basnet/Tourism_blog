@@ -16,20 +16,31 @@ import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
+import { csrfProtection } from "./middlewares/csrfMiddleware.js";
 
 const app = express();
 
-app.use(helmet());
+app.disable("x-powered-by");
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    contentSecurityPolicy: false,
+  })
+);
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL || true,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
   })
 );
 app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());
 app.use(compression());
 app.use(mongoSanitize());
+app.use(csrfProtection);
 
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
@@ -44,6 +55,8 @@ const apiLimiter = rateLimit({
 app.use("/api", apiLimiter);
 
 app.use(passport.initialize());
+
+app.set("trust proxy", 1);
 
 app.get("/api/v1/health", (req, res) => {
   res.json({ success: true, message: "Nepal Tourism API is running" });

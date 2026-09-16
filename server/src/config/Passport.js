@@ -6,6 +6,14 @@ import User from "../models/User.js";
 // We don't use passport sessions — auth state lives in our own JWT cookies.
 // Passport here is only responsible for the OAuth handshake + profile fetch.
 
+// Absolute base URL for this API server. MUST be absolute (not a relative
+// path) because passport-oauth2 resolves a relative callbackURL against the
+// incoming request's Host header. In Docker/behind Vite's proxy, that Host
+// header can be rewritten to something like "server:5000" (the Docker
+// service name) instead of "localhost:5000" — a URL that was never
+// registered with Google/Facebook and that they'll reject outright.
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`;
+
 // Shared find-or-create logic for both providers.
 // Deliberately matches ONLY by (provider, providerId) — never by email.
 // If we matched by email instead, someone logging in with Google using the
@@ -46,7 +54,16 @@ if (googleEnabled) {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "/api/v1/auth/google/callback",
+        callbackURL: `${SERVER_URL}/api/v1/auth/google/callback`,
+        // Trust X-Forwarded-* headers (from Vite's proxy / any reverse
+        // proxy) when the strategy itself needs to infer request info.
+        // Doesn't affect callbackURL above since that's already absolute.
+        proxy: true,
+        // Fallback default — the /auth/google route already passes
+        // scope: ["profile","email"] to passport.authenticate(), but
+        // setting it here too means Google always receives a scope param
+        // even if that route-level option is ever dropped or bypassed.
+        scope: ["profile", "email"],
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -68,7 +85,8 @@ if (facebookEnabled) {
       {
         clientID: process.env.FACEBOOK_APP_ID,
         clientSecret: process.env.FACEBOOK_APP_SECRET,
-        callbackURL: "/api/v1/auth/facebook/callback",
+        callbackURL: `${SERVER_URL}/api/v1/auth/facebook/callback`,
+        proxy: true,
         profileFields: ["id", "displayName", "emails", "photos"],
       },
       async (accessToken, refreshToken, profile, done) => {

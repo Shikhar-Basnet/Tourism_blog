@@ -96,15 +96,18 @@ export default function Destinations() {
         </script>
       </Helmet>
 
-      <nav aria-label="Breadcrumb" className="mb-3 text-xs text-gray-500">
-        <a href="/" className="transition-colors hover:text-blue-600">Home</a> / <span className="text-gray-900">Destinations</span>
+      <nav aria-label="Breadcrumb" className="mb-4 text-xs font-medium text-slate-500">
+        <a href="/" className="transition-colors hover:text-brand-600">Home</a> / <span className="text-slate-900">Destinations</span>
       </nav>
 
-      <h1 className="mb-2 text-2xl font-normal text-gray-900">Explore Destinations</h1>
-      <p className="mb-6 max-w-2xl text-sm text-gray-600">
-        Every listing below is checked for accuracy — province, altitude, entry fees,
-        and the best season to go — so you can plan with real information, not guesswork.
-      </p>
+      <div className="mb-7 rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-soft backdrop-blur-sm">
+        <p className="mb-3 inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700">Explore</p>
+        <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">Explore Destinations</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
+          Every listing below is checked for accuracy — province, altitude, entry fees,
+          and the best season to go — so you can plan with real information, not guesswork.
+        </p>
+      </div>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">

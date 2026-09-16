@@ -224,7 +224,7 @@ export default function Navbar() {
                         <img
                           src={user.avatar}
                           alt=""
-                          referrerPolicy="no-referrer"
+                          referrerPolicy="strict-origin-when-cross-origin"
                           className="h-7 w-7 rounded-full"
                         />
                       ) : (
@@ -371,7 +371,7 @@ export default function Navbar() {
                       <img
                         src={user.avatar}
                         alt=""
-                        referrerPolicy="no-referrer"
+                        referrerPolicy="strict-origin-when-cross-origin"
                         className="h-9 w-9 rounded-full"
                       />
                     ) : (

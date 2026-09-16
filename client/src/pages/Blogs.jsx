@@ -63,15 +63,18 @@ export default function Blogs() {
         </script>
       </Helmet>
 
-      <nav aria-label="Breadcrumb" className="mb-3 text-xs text-gray-500">
-        <a href="/" className="transition-colors hover:text-blue-600">Home</a> / <span className="text-gray-900">Blogs</span>
+      <nav aria-label="Breadcrumb" className="mb-4 text-xs font-medium text-slate-500">
+        <a href="/" className="transition-colors hover:text-brand-600">Home</a> / <span className="text-slate-900">Blogs</span>
       </nav>
 
-      <h1 className="mb-2 text-2xl font-normal text-gray-900">Travel Blogs</h1>
-      <p className="mb-6 max-w-2xl text-sm text-gray-600">
-        Trekking notes, planning guides, and firsthand stories from across Nepal —
-        written and reviewed by our team, not auto-generated.
-      </p>
+      <div className="mb-7 rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-soft backdrop-blur-sm">
+        <p className="mb-3 inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700">Journal</p>
+        <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">Travel Blogs</h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
+          Trekking notes, planning guides, and firsthand stories from across Nepal —
+          written and reviewed by our team, not auto-generated.
+        </p>
+      </div>
 
       <div className="mb-8 flex flex-wrap gap-2">
         <button

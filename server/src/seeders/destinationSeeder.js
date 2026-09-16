@@ -3,7 +3,27 @@ dotenv.config();
 import mongoose from "mongoose";
 import slugify from "slugify";
 import { connectDB } from "../config/db.js";
+import Category from "../models/Category.js";
 import Destination from "../models/Destination.js";
+
+const CANONICAL_CATEGORIES = [
+  "Adventure",
+  "Cultural",
+  "Heritage",
+  "Nature",
+  "Religious",
+];
+
+const normalizeDestinationCategories = (values = []) => {
+  const cleaned = [...new Set(
+    values
+      .filter(Boolean)
+      .map((value) => String(value).trim())
+      .filter((value) => CANONICAL_CATEGORIES.includes(value))
+  )];
+
+  return cleaned.length > 0 ? cleaned.slice(0, 3) : ["Adventure"];
+};
 
 const Destinations = [
   {
@@ -12,7 +32,7 @@ const Destinations = [
       "The world-famous trek to the base of Mount Everest through Sherpa villages and the breathtaking Khumbu region.",
     province: "Koshi",
     district: "Solukhumbu",
-    category: ["Trekking", "Mountain", "Adventure"],
+    category: normalizeDestinationCategories(["Trekking", "Mountain", "Adventure"]),
     bestTimeToVisit: "March to May, September to November",
     altitude: 5364,
     entryFee: { npr: 0, foreigner: 3000 },
@@ -32,7 +52,7 @@ const Destinations = [
       "A magnificent Hindu temple dedicated to Goddess Sita, attracting thousands of pilgrims every year.",
     province: "Madhesh",
     district: "Dhanusha",
-    category: ["Religious", "Cultural", "Heritage"],
+    category: normalizeDestinationCategories(["Religious", "Cultural", "Heritage"]),
     bestTimeToVisit: "October to March",
     altitude: 74,
     entryFee: { npr: 0, foreigner: 0 },
@@ -52,7 +72,7 @@ const Destinations = [
       "A UNESCO World Heritage Site featuring ancient palaces, temples, and traditional Newari architecture.",
     province: "Bagmati",
     district: "Kathmandu",
-    category: ["Heritage", "UNESCO", "Culture"],
+    category: normalizeDestinationCategories(["Heritage", "UNESCO", "Culture"]),
     bestTimeToVisit: "September to November, March to May",
     altitude: 1400,
     entryFee: { npr: 0, foreigner: 1000 },
@@ -72,7 +92,7 @@ const Destinations = [
       "Nepal's tourism capital, famous for Phewa Lake, Annapurna views, caves, and adventure sports.",
     province: "Gandaki",
     district: "Kaski",
-    category: ["Lakes", "Adventure", "Mountain"],
+    category: normalizeDestinationCategories(["Lakes", "Adventure", "Mountain"]),
     bestTimeToVisit: "September to November, March to May",
     altitude: 822,
     entryFee: { npr: 0, foreigner: 0 },
@@ -92,7 +112,7 @@ const Destinations = [
       "The birthplace of Lord Buddha and one of the world's most important pilgrimage destinations.",
     province: "Lumbini",
     district: "Rupandehi",
-    category: ["Religious", "UNESCO", "Heritage"],
+    category: normalizeDestinationCategories(["Religious", "UNESCO", "Heritage"]),
     bestTimeToVisit: "October to March",
     altitude: 150,
     entryFee: { npr: 0, foreigner: 700 },
@@ -112,7 +132,7 @@ const Destinations = [
       "Nepal's largest lake, renowned for its crystal-clear blue waters and pristine mountain scenery.",
     province: "Karnali",
     district: "Mugu",
-    category: ["Lake", "Nature", "National Park"],
+    category: normalizeDestinationCategories(["Lake", "Nature", "National Park"]),
     bestTimeToVisit: "April to June, September to November",
     altitude: 2990,
     entryFee: { npr: 100, foreigner: 3000 },
@@ -132,7 +152,7 @@ const Destinations = [
       "A peaceful national park known for rolling grasslands, forests, and the Khaptad Baba Ashram.",
     province: "Sudurpashchim",
     district: "Bajhang",
-    category: ["National Park", "Nature", "Hiking"],
+    category: normalizeDestinationCategories(["National Park", "Nature", "Hiking"]),
     bestTimeToVisit: "March to May, October to November",
     altitude: 3000,
     entryFee: { npr: 100, foreigner: 3000 },
@@ -156,8 +176,45 @@ const Destinations = [
 //    model's pre("validate") hook that normally generates it on .save(),
 //    so without this every upserted doc would get slug: null and collide
 //    on the unique slug index after the first one.
+const sanitizeInvalidLocations = async () => {
+  const destinations = await Destination.find({});
+
+  for (const destination of destinations) {
+    const lat = Number(destination.coordinates?.lat);
+    const lng = Number(destination.coordinates?.lng);
+    const location = destination.location;
+    const hasBadGeo =
+      location?.type === "Point" &&
+      (!Array.isArray(location.coordinates) ||
+        location.coordinates.length !== 2 ||
+        !Number.isFinite(Number(location.coordinates[0])) ||
+        !Number.isFinite(Number(location.coordinates[1])));
+
+    if (hasBadGeo && Number.isFinite(lat) && Number.isFinite(lng)) {
+      destination.location = { type: "Point", coordinates: [lng, lat] };
+      await destination.save();
+    } else if (hasBadGeo) {
+      await Destination.updateOne({ _id: destination._id }, { $unset: { location: "" } });
+    }
+  }
+};
+
 const seed = async () => {
   await connectDB();
+
+  await sanitizeInvalidLocations();
+
+  for (const name of CANONICAL_CATEGORIES) {
+    const slug = slugify(name, { lower: true, strict: true });
+    await Category.findOneAndUpdate(
+      { name },
+      { $set: { name, slug } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  }
+
+  const categoryNames = new Set(CANONICAL_CATEGORIES);
+  await Category.deleteMany({ name: { $nin: [...categoryNames] } });
 
   // Self-heal: earlier buggy runs (or any other bug) may have left behind
   // docs with slug: null, which collide with the unique slug index on every
@@ -170,17 +227,26 @@ const seed = async () => {
 
   for (const dest of Destinations) {
     const slug = slugify(dest.title, { lower: true, strict: true });
+    const validLocation =
+      dest.coordinates?.lat != null && dest.coordinates?.lng != null
+        ? { type: "Point", coordinates: [dest.coordinates.lng, dest.coordinates.lat] }
+        : undefined;
+
     await Destination.findOneAndUpdate(
       { title: dest.title },
       {
-        $set: { ...dest, slug },
+        $set: {
+          ...dest,
+          slug,
+          ...(validLocation ? { location: validLocation } : {}),
+        },
         $setOnInsert: { gallery: [] },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: false }
     );
   }
 
-  console.log(`Upserted ${Destinations.length} sample destinations (existing galleries preserved)`);
+  console.log(`Seeded 5 canonical categories and upserted ${Destinations.length} sample destinations.`);
   await mongoose.disconnect();
   process.exit();
 };

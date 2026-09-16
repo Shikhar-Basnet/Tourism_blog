@@ -1,6 +1,7 @@
 import Blog from "../models/Blog.js";
 import { deleteCloudinaryImage } from "../middlewares/uploadMiddleware.js";
 import { cacheGetOrSet, cacheInvalidate } from "../config/cache.js";
+import { sanitizeText, sanitizeObjectId, logSecurityEvent } from "../utils/security.js";
 
 const STAFF_ROLES = ["editor", "admin", "superadmin"];
 const isStaff = (req) => req.user && STAFF_ROLES.includes(req.user.role);
@@ -11,18 +12,23 @@ const MAX_LIMIT = 100;
 // @route   GET /api/v1/blogs
 export const getBlogs = async (req, res, next) => {
   try {
-    const { page = 1, category, tag, search, status } = req.query;
+    const { category, tag, search, status } = req.query;
+    const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
     const limit = Math.min(Number(req.query.limit) || 9, MAX_LIMIT);
+    const safeCategory = sanitizeText(category, 80);
+    const safeTag = sanitizeText(tag, 80);
+    const safeSearch = sanitizeText(search, 120);
+    const safeStatus = status && ["draft", "published"].includes(status) ? status : null;
 
     const query = {};
-    if (isStaff(req) && status) {
-      query.status = status;
+    if (isStaff(req) && safeStatus) {
+      query.status = safeStatus;
     } else {
       query.status = "published";
     }
-    if (category) query.category = category;
-    if (tag) query.tags = tag;
-    if (search) query.$text = { $search: search };
+    if (safeCategory) query.category = safeCategory;
+    if (safeTag) query.tags = safeTag;
+    if (safeSearch) query.$text = { $search: safeSearch };
 
     const fetchBlogs = async () => {
       const blogs = await Blog.find(query)
@@ -37,7 +43,7 @@ export const getBlogs = async (req, res, next) => {
       return {
         count: blogs.length,
         total,
-        page: Number(page),
+        page,
         pages: Math.ceil(total / limit),
         data: blogs,
       };
@@ -71,7 +77,13 @@ export const getBlogs = async (req, res, next) => {
 // like state to another.
 export const getBlogBySlug = async (req, res, next) => {
   try {
-    const blog = await Blog.findOne({ slug: req.params.slug })
+    const slug = sanitizeText(req.params.slug, 120).toLowerCase();
+    if (!slug) {
+      res.status(400);
+      throw new Error("Blog slug is required");
+    }
+
+    const blog = await Blog.findOne({ slug })
       .populate("category", "name slug")
       .populate("author", "name avatar")
       .populate("relatedDestinations", "title slug province");
@@ -112,16 +124,41 @@ export const getBlogBySlug = async (req, res, next) => {
 // @route   POST /api/v1/blogs  (staff only)
 export const createBlog = async (req, res, next) => {
   try {
-    const body = { ...req.body, author: req.user._id };
+    const title = sanitizeText(req.body?.title, 180);
+    const content = sanitizeText(req.body?.content, 20000);
+    const excerpt = sanitizeText(req.body?.excerpt, 300);
+    const category = sanitizeText(req.body?.category, 80);
+    const status = req.body?.status === "published" ? "published" : "draft";
 
-    if (typeof body.tags === "string") {
-      try { body.tags = JSON.parse(body.tags); }
-      catch { body.tags = body.tags.split(",").map((t) => t.trim()).filter(Boolean); }
+    if (!title || !content) {
+      res.status(400);
+      throw new Error("Title and content are required");
+    }
+
+    const body = {
+      title,
+      excerpt: excerpt || undefined,
+      content,
+      category: category || undefined,
+      status,
+      author: req.user._id,
+    };
+
+    if (typeof req.body?.tags === "string") {
+      try {
+        body.tags = JSON.parse(req.body.tags);
+      } catch {
+        body.tags = req.body.tags.split(",").map((t) => sanitizeText(t, 50)).filter(Boolean);
+      }
+    }
+    if (Array.isArray(req.body?.tags)) {
+      body.tags = req.body.tags.map((tag) => sanitizeText(tag, 50)).filter(Boolean).slice(0, 20);
     }
     if (req.file) body.featuredImage = req.file.path;
 
     const blog = await Blog.create(body);
     await cacheInvalidate("blogs:list:*");
+    logSecurityEvent("blog_created", { actorId: req.user?._id?.toString(), blogId: blog._id.toString(), status: blog.status });
     res.status(201).json({ success: true, data: blog });
   } catch (err) {
     next(err);
@@ -131,18 +168,29 @@ export const createBlog = async (req, res, next) => {
 // @route   PUT /api/v1/blogs/id/:id  (staff only)
 export const updateBlog = async (req, res, next) => {
   try {
-    const updates = { ...req.body };
+    const blogId = sanitizeObjectId(req.params.id, "Blog ID");
+    const updates = {};
 
-    if (typeof updates.tags === "string") {
-      try { updates.tags = JSON.parse(updates.tags); }
-      catch { updates.tags = updates.tags.split(",").map((t) => t.trim()).filter(Boolean); }
+    if (req.body?.title !== undefined) updates.title = sanitizeText(req.body.title, 180);
+    if (req.body?.excerpt !== undefined) updates.excerpt = sanitizeText(req.body.excerpt, 300);
+    if (req.body?.content !== undefined) updates.content = sanitizeText(req.body.content, 20000);
+    if (req.body?.category !== undefined) updates.category = sanitizeText(req.body.category, 80) || undefined;
+    if (req.body?.status !== undefined) updates.status = req.body.status === "published" ? "published" : "draft";
+
+    if (typeof req.body?.tags === "string") {
+      try {
+        updates.tags = JSON.parse(req.body.tags);
+      } catch {
+        updates.tags = req.body.tags.split(",").map((t) => sanitizeText(t, 50)).filter(Boolean);
+      }
+    } else if (Array.isArray(req.body?.tags)) {
+      updates.tags = req.body.tags.map((tag) => sanitizeText(tag, 50)).filter(Boolean).slice(0, 20);
     }
 
-    const blog = await Blog.findById(req.params.id);
+    const blog = await Blog.findById(blogId);
     if (!blog) { res.status(404); throw new Error("Blog not found"); }
 
-    const removeFeaturedImage = updates.removeFeaturedImage === "true";
-    delete updates.removeFeaturedImage;
+    const removeFeaturedImage = req.body?.removeFeaturedImage === "true";
 
     const previousImage = blog.featuredImage;
     Object.assign(blog, updates);
@@ -155,8 +203,17 @@ export const updateBlog = async (req, res, next) => {
       if (previousImage) await deleteCloudinaryImage(previousImage);
     }
 
+    if (updates.title && !updates.content) {
+      // no-op: the title field is already assigned, and content is validated separately when present
+    }
+    if (updates.title === "" || updates.content === "") {
+      res.status(400);
+      throw new Error("Title and content must not be empty");
+    }
+
     await blog.save();
     await cacheInvalidate("blogs:list:*");
+    logSecurityEvent("blog_updated", { actorId: req.user?._id?.toString(), blogId: blog._id.toString() });
     res.json({ success: true, data: blog });
   } catch (err) {
     next(err);
@@ -166,13 +223,15 @@ export const updateBlog = async (req, res, next) => {
 // @route   DELETE /api/v1/blogs/id/:id  (staff only)
 export const deleteBlog = async (req, res, next) => {
   try {
-    const blog = await Blog.findByIdAndDelete(req.params.id);
+    const blogId = sanitizeObjectId(req.params.id, "Blog ID");
+    const blog = await Blog.findByIdAndDelete(blogId);
     if (!blog) {
       res.status(404);
       throw new Error("Blog not found");
     }
     if (blog.featuredImage) await deleteCloudinaryImage(blog.featuredImage);
     await cacheInvalidate("blogs:list:*");
+    logSecurityEvent("blog_deleted", { actorId: req.user?._id?.toString(), blogId: blog._id.toString() });
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);
@@ -186,15 +245,16 @@ export const deleteBlog = async (req, res, next) => {
 // @route   POST /api/v1/blogs/id/:id/like
 export const toggleBlogLike = async (req, res, next) => {
   try {
+    const blogId = sanitizeObjectId(req.params.id, "Blog ID");
     const userId = req.user._id;
 
-    const alreadyLiked = await Blog.exists({ _id: req.params.id, likedBy: userId });
+    const alreadyLiked = await Blog.exists({ _id: blogId, likedBy: userId });
 
     const update = alreadyLiked
       ? { $pull: { likedBy: userId } }
       : { $addToSet: { likedBy: userId } };
 
-    const blog = await Blog.findByIdAndUpdate(req.params.id, update, { new: true });
+    const blog = await Blog.findByIdAndUpdate(blogId, update, { new: true });
     if (!blog) {
       res.status(404);
       throw new Error("Blog not found");

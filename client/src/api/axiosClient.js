@@ -5,6 +5,18 @@ const axiosClient = axios.create({
   withCredentials: true,
 });
 
+const getCsrfToken = () => {
+  const name = "csrfToken=";
+  const decoded = document.cookie ? document.cookie.split(";") : [];
+  for (const cookie of decoded) {
+    const trimmed = cookie.trim();
+    if (trimmed.startsWith(name)) {
+      return decodeURIComponent(trimmed.slice(name.length));
+    }
+  }
+  return "";
+};
+
 // --- Silent refresh-and-retry on 401 ---
 let isRefreshing = false;
 let pendingQueue = [];
@@ -28,6 +40,18 @@ const rawRefresh = () =>
 // into a failed refresh attempt, and the user sees the refresh endpoint's
 // generic error instead of "Invalid credentials".
 const SKIP_REFRESH_RETRY_URLS = ["/auth/refresh", "/auth/admin/login"];
+
+axiosClient.interceptors.request.use((config) => {
+  const method = (config.method || "get").toLowerCase();
+  const csrfToken = getCsrfToken();
+
+  if (csrfToken && ["post", "put", "patch", "delete"].includes(method)) {
+    config.headers = config.headers || {};
+    config.headers["X-CSRF-Token"] = csrfToken;
+  }
+
+  return config;
+}, (error) => Promise.reject(error));
 
 axiosClient.interceptors.response.use(
   (response) => response,

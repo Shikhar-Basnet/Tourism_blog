@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Mail, Phone, Trash2, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { Mail, Phone, Trash2, Clock } from "lucide-react";
 import { fetchContacts, updateContactStatus, deleteContactEnquiry } from "../../services/contactService.js";
 import { useDebounce } from "../../hooks/useDebounce.js";
+import { useToasts } from "../../hooks/useToasts.js";
+import Toast from "../../components/Toast.jsx";
 import Pagination from "../../components/Pagination.jsx";
 
 const LIMIT = 10;
@@ -16,8 +18,8 @@ export default function ManageEnquiries() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
-  const [banner, setBanner] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const { toasts, showToast, dismiss } = useToasts();
   const debouncedSearch = useDebounce(search, 400);
   const queryClient = useQueryClient();
 
@@ -26,18 +28,14 @@ export default function ManageEnquiries() {
     queryFn: () => fetchContacts({ page, limit: LIMIT, status: status || undefined, search: debouncedSearch || undefined }),
   });
 
-  const showBanner = (type, message) => {
-    setBanner({ type, message });
-    window.setTimeout(() => setBanner(null), 4000);
-  };
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }) => updateContactStatus(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "contacts"] });
-      showBanner("success", "Status updated.");
+      showToast("success", "Status updated.");
     },
-    onError: (err) => showBanner("error", err?.response?.data?.message || "Couldn't update status."),
+    onError: (err) => showToast("error", err?.response?.data?.message || "Couldn't update status."),
   });
 
   const deleteMutation = useMutation({
@@ -45,10 +43,10 @@ export default function ManageEnquiries() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "contacts"] });
       setPendingDeleteId(null);
-      showBanner("success", "Enquiry deleted.");
+      showToast("success", "Enquiry deleted.");
     },
     onError: (err) => {
-      showBanner("error", err?.response?.data?.message || "Couldn't delete enquiry.");
+      showToast("error", err?.response?.data?.message || "Couldn't delete enquiry.");
       setPendingDeleteId(null);
     },
   });
@@ -77,12 +75,7 @@ export default function ManageEnquiries() {
         </div>
       </div>
 
-      {banner && (
-        <div className={`mb-4 flex items-center gap-2 rounded px-3.5 py-2.5 text-sm ${banner.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
-          {banner.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-          {banner.message}
-        </div>
-      )}
+      <Toast toasts={toasts} onDismiss={dismiss} />
 
       <div className="rounded-2xl bg-white p-6 shadow-[0_1px_2px_0_rgba(60,64,67,0.3),0_1px_3px_1px_rgba(60,64,67,0.15)]">
         {isLoading && <p className="text-sm text-gray-600">Loading enquiries...</p>}

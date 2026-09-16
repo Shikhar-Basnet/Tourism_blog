@@ -7,12 +7,14 @@ import {
   setAuthCookies,
   clearAuthCookies,
 } from "../utils/generateTokens.js";
+import { sanitizeText, normalizeEmail, logSecurityEvent } from "../utils/security.js";
 
 // Shared by both OAuth callbacks: issue tokens, store hashed refresh token,
 // then return the visitor to the page they were trying to reach.
 const issueTokensAndRedirect = async (req, res) => {
   const user = req.user;
-  const redirectTarget = req.query?.state || "/";
+  const redirectTarget = typeof req.query?.state === "string" ? req.query.state : "/";
+  const safeRedirect = redirectTarget.startsWith("/") && !redirectTarget.startsWith("//") ? redirectTarget : "/";
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
@@ -22,7 +24,6 @@ const issueTokensAndRedirect = async (req, res) => {
 
   setAuthCookies(res, accessToken, refreshToken);
 
-  const safeRedirect = redirectTarget.startsWith("/") ? redirectTarget : "/";
   res.redirect(`${process.env.CLIENT_URL}${safeRedirect}`);
 };
 
@@ -39,21 +40,26 @@ export const facebookCallback = (req, res, next) =>
 export const adminLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const safeEmail = normalizeEmail(email);
+    const safePassword = typeof password === "string" ? password.trim() : "";
 
-    if (!email || !password) {
+    if (!safeEmail || !safePassword) {
       res.status(400);
+      logSecurityEvent("admin_login_failed", { reason: "missing_credentials", email: safeEmail || "unknown" });
       throw new Error("Email and password are required");
     }
 
-    const user = await User.findOne({ email, provider: "local" }).select("+password");
+    const user = await User.findOne({ email: safeEmail, provider: "local" }).select("+password");
 
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user || !(await user.comparePassword(safePassword))) {
       res.status(401);
+      logSecurityEvent("admin_login_failed", { reason: "invalid_credentials", email: safeEmail });
       throw new Error("Invalid credentials");
     }
 
     if (!["admin", "superadmin", "editor"].includes(user.role)) {
       res.status(403);
+      logSecurityEvent("admin_login_failed", { reason: "role_forbidden", userId: user._id.toString(), email: safeEmail, role: user.role });
       throw new Error("This login is reserved for staff accounts");
     }
 
@@ -64,6 +70,7 @@ export const adminLogin = async (req, res, next) => {
     await user.save();
 
     setAuthCookies(res, accessToken, refreshToken);
+    logSecurityEvent("admin_login_success", { userId: user._id.toString(), email: safeEmail, role: user.role });
 
     res.json({
       success: true,
@@ -121,6 +128,7 @@ export const logout = async (req, res, next) => {
       try {
         const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
         await User.findByIdAndUpdate(decoded.id, { $unset: { refreshTokenHash: 1 } });
+        logSecurityEvent("logout_success", { userId: decoded.id });
       } catch {
         // token already invalid/expired — nothing to revoke, just clear cookies
       }

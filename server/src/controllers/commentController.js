@@ -1,29 +1,30 @@
 import mongoose from "mongoose";
 import Comment from "../models/Comment.js";
 import { cacheGetOrSet, cacheInvalidate } from "../config/cache.js";
+import { sanitizeText, sanitizeObjectId, logSecurityEvent } from "../utils/security.js";
 
 const VALID_TARGETS = ["Blog", "Destination"];
 const STAFF_ROLES = ["editor", "admin", "superadmin"];
 const MAX_COMMENTS_PER_USER = 5;
 
 const commentsCacheKey = (targetType, targetId) => `comments:${targetType}:${targetId}`;
+const normalizeTargetType = (value) => {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  return VALID_TARGETS.includes(normalized) ? normalized : null;
+};
 
 // @desc    List comments for a blog or destination
 // @route   GET /api/v1/comments?targetType=Blog&targetId=<id>
 export const getComments = async (req, res, next) => {
   try {
-    const { targetType, targetId } = req.query;
+    const targetType = normalizeTargetType(req.query.targetType);
+    const targetId = typeof req.query.targetId === "string" ? sanitizeObjectId(req.query.targetId, "Comment target ID") : null;
 
-    if (!VALID_TARGETS.includes(targetType) || !targetId) {
+    if (!targetType || !targetId) {
       res.status(400);
       throw new Error("targetType (Blog|Destination) and targetId are required");
     }
 
-    // Short TTL (20s) — comments are the most write-heavy content on the
-    // site, so this isn't about long-term freshness, it's about absorbing
-    // bursts of repeat views on a popular post between writes. Every write
-    // (create/update/delete) invalidates this key immediately below, so a
-    // visitor never sees a stale view of their own comment.
     const comments = await cacheGetOrSet(
       commentsCacheKey(targetType, targetId),
       20,
@@ -45,15 +46,13 @@ export const createComment = async (req, res, next) => {
   const session = await mongoose.startSession();
 
   try {
-    const { targetType, targetId, content } = req.body;
+    const targetType = normalizeTargetType(req.body?.targetType);
+    const targetId = typeof req.body?.targetId === "string" ? sanitizeObjectId(req.body.targetId, "Comment target ID") : null;
+    const content = sanitizeText(req.body?.content, 1000);
 
-    if (!VALID_TARGETS.includes(targetType) || !targetId) {
+    if (!targetType || !targetId || !content) {
       res.status(400);
-      throw new Error("targetType (Blog|Destination) and targetId are required");
-    }
-    if (!content?.trim()) {
-      res.status(400);
-      throw new Error("Comment content is required");
+      throw new Error("targetType (Blog|Destination), targetId, and comment content are required");
     }
 
     let comment;
@@ -71,7 +70,7 @@ export const createComment = async (req, res, next) => {
       }
 
       const created = await Comment.create(
-        [{ content: content.trim(), author: req.user._id, targetType, targetId }],
+        [{ content, author: req.user._id, targetType, targetId }],
         { session }
       );
       comment = created[0];
@@ -79,6 +78,7 @@ export const createComment = async (req, res, next) => {
 
     await comment.populate("author", "name avatar role");
     await cacheInvalidate(commentsCacheKey(targetType, targetId));
+    logSecurityEvent("comment_created", { actorId: req.user._id.toString(), targetType, targetId: targetId.toString() });
     res.status(201).json({ success: true, data: comment });
   } catch (err) {
     next(err);
@@ -91,7 +91,8 @@ export const createComment = async (req, res, next) => {
 // @route   PUT /api/v1/comments/:id
 export const updateComment = async (req, res, next) => {
   try {
-    const comment = await Comment.findById(req.params.id);
+    const commentId = sanitizeObjectId(req.params.id, "Comment ID");
+    const comment = await Comment.findById(commentId);
     if (!comment) {
       res.status(404);
       throw new Error("Comment not found");
@@ -101,12 +102,19 @@ export const updateComment = async (req, res, next) => {
       throw new Error("You can only edit your own comments");
     }
 
-    comment.content = req.body.content?.trim() || comment.content;
+    const content = sanitizeText(req.body?.content, 1000);
+    if (!content) {
+      res.status(400);
+      throw new Error("Comment content is required");
+    }
+
+    comment.content = content;
     comment.isEdited = true;
     await comment.save();
     await comment.populate("author", "name avatar role");
 
     await cacheInvalidate(commentsCacheKey(comment.targetType, comment.targetId));
+    logSecurityEvent("comment_updated", { actorId: req.user._id.toString(), commentId: comment._id.toString() });
     res.json({ success: true, data: comment });
   } catch (err) {
     next(err);
@@ -117,7 +125,8 @@ export const updateComment = async (req, res, next) => {
 // @route   DELETE /api/v1/comments/:id
 export const deleteComment = async (req, res, next) => {
   try {
-    const comment = await Comment.findById(req.params.id);
+    const commentId = sanitizeObjectId(req.params.id, "Comment ID");
+    const comment = await Comment.findById(commentId);
     if (!comment) {
       res.status(404);
       throw new Error("Comment not found");
@@ -133,6 +142,7 @@ export const deleteComment = async (req, res, next) => {
 
     await comment.deleteOne();
     await cacheInvalidate(commentsCacheKey(comment.targetType, comment.targetId));
+    logSecurityEvent("comment_deleted", { actorId: req.user._id.toString(), commentId: comment._id.toString(), isModerator: isStaff });
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);

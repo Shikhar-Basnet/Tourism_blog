@@ -1,5 +1,6 @@
 import Contact from "../models/Contact.js";
 import { verifyRecaptcha } from "../utils/verifyCaptcha.js";
+import { sanitizeText, normalizeEmail, sanitizeObjectId, logSecurityEvent } from "../utils/security.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_ENQUIRIES_PER_EMAIL = 3;
@@ -12,35 +13,28 @@ export const createContact = async (req, res, next) => {
   try {
     const { name, email, phone, subject, message, captchaToken, website } = req.body;
 
-    // --- Honeypot ---
-    // "website" is a hidden field real users never see or fill; a bot's
-    // autofill will populate it. Rejected with a generic message so bots
-    // don't learn which field tripped the trap.
     if (website) {
       res.status(400);
       throw new Error("Submission rejected");
     }
 
-    // --- Presence & format validation ---
-    if (!name?.trim() || !email?.trim() || !subject?.trim() || !message?.trim()) {
+    const safeName = sanitizeText(name, 100);
+    const safeEmail = normalizeEmail(email);
+    const safeSubject = sanitizeText(subject, 150);
+    const safeMessage = sanitizeText(message, 2000);
+    const safePhone = sanitizeText(phone, 30);
+
+    if (!safeName || !safeEmail || !safeSubject || !safeMessage) {
       res.status(400);
       throw new Error("Name, email, subject, and message are required");
     }
-    if (!EMAIL_REGEX.test(email.trim())) {
+    if (!EMAIL_REGEX.test(safeEmail)) {
       res.status(400);
       throw new Error("Please provide a valid email address");
     }
-    if (name.trim().length > 100 || subject.trim().length > 150) {
-      res.status(400);
-      throw new Error("Name or subject is too long");
-    }
-    if (message.trim().length < 10) {
+    if (safeMessage.length < 10) {
       res.status(400);
       throw new Error("Message is too short — please add a few more details");
-    }
-    if (message.trim().length > 2000) {
-      res.status(400);
-      throw new Error("Message is too long (max 2000 characters)");
     }
 
     // --- CAPTCHA ---
@@ -57,7 +51,7 @@ export const createContact = async (req, res, next) => {
     // visitors aren't locked out forever.
     const windowStart = new Date(Date.now() - ENQUIRY_WINDOW_HOURS * 60 * 60 * 1000);
     const recentCount = await Contact.countDocuments({
-      email: email.trim().toLowerCase(),
+      email: safeEmail,
       createdAt: { $gte: windowStart },
     });
     if (recentCount >= MAX_ENQUIRIES_PER_EMAIL) {
@@ -73,14 +67,14 @@ export const createContact = async (req, res, next) => {
     // interpreted as a query operator. express-mongo-sanitize (app.js)
     // also strips any "$"/"." prefixed keys from req.body before this runs.
     const contact = await Contact.create({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone?.trim() || undefined,
-      subject: subject.trim(),
-      message: message.trim(),
+      name: safeName,
+      email: safeEmail,
+      phone: safePhone || undefined,
+      subject: safeSubject,
+      message: safeMessage,
       user: req.user?._id,
       ipAddress: req.ip,
-      userAgent: req.headers["user-agent"]?.slice(0, 300),
+      userAgent: sanitizeText(req.headers["user-agent"], 300),
     });
 
     res.status(201).json({
@@ -97,16 +91,19 @@ export const createContact = async (req, res, next) => {
 // @route   GET /api/v1/contact
 export const getContacts = async (req, res, next) => {
   try {
-    const { page = 1, status, search } = req.query;
+    const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
     const limit = Math.min(Number(req.query.limit) || 15, 100);
+    const safeStatus = typeof req.query.status === "string" ? sanitizeText(req.query.status, 32) : "";
+    const safeSearch = sanitizeText(req.query.search, 100);
 
     const query = {};
-    if (status) query.status = status;
-    if (search) {
+    if (safeStatus) query.status = safeStatus;
+    if (safeSearch) {
+      const escaped = safeSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { subject: { $regex: search, $options: "i" } },
+        { name: { $regex: escaped, $options: "i" } },
+        { email: { $regex: escaped, $options: "i" } },
+        { subject: { $regex: escaped, $options: "i" } },
       ];
     }
 
@@ -120,7 +117,7 @@ export const getContacts = async (req, res, next) => {
       success: true,
       count: contacts.length,
       total,
-      page: Number(page),
+      page,
       pages: Math.ceil(total / limit),
       data: contacts,
     });
@@ -133,22 +130,25 @@ export const getContacts = async (req, res, next) => {
 // @route   PATCH /api/v1/contact/:id
 export const updateContactStatus = async (req, res, next) => {
   try {
+    const contactId = sanitizeObjectId(req.params.id, "Enquiry ID");
     const { status, adminNote } = req.body;
     const ALLOWED_STATUSES = ["new", "in_progress", "resolved"];
-    if (status && !ALLOWED_STATUSES.includes(status)) {
+    const safeStatus = typeof status === "string" ? sanitizeText(status, 32) : status;
+    if (safeStatus && !ALLOWED_STATUSES.includes(safeStatus)) {
       res.status(400);
       throw new Error("Invalid status");
     }
 
-    const contact = await Contact.findById(req.params.id);
+    const contact = await Contact.findById(contactId);
     if (!contact) {
       res.status(404);
       throw new Error("Enquiry not found");
     }
 
-    if (status) contact.status = status;
-    if (adminNote !== undefined) contact.adminNote = adminNote.trim().slice(0, 1000);
+    if (safeStatus) contact.status = safeStatus;
+    if (adminNote !== undefined) contact.adminNote = sanitizeText(adminNote, 1000);
     await contact.save();
+    logSecurityEvent("contact_status_updated", { actorId: req.user._id.toString(), contactId: contact._id.toString(), status: contact.status });
 
     res.json({ success: true, data: contact });
   } catch (err) {
@@ -160,11 +160,13 @@ export const updateContactStatus = async (req, res, next) => {
 // @route   DELETE /api/v1/contact/:id
 export const deleteContact = async (req, res, next) => {
   try {
-    const contact = await Contact.findByIdAndDelete(req.params.id);
+    const contactId = sanitizeObjectId(req.params.id, "Enquiry ID");
+    const contact = await Contact.findByIdAndDelete(contactId);
     if (!contact) {
       res.status(404);
       throw new Error("Enquiry not found");
     }
+    logSecurityEvent("contact_deleted", { actorId: req.user._id.toString(), contactId: contact._id.toString() });
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);

@@ -8,12 +8,7 @@ import Blog from "../models/Blog.js";
 import User from "../models/User.js";
 import Destination from "../models/Destination.js";
 
-const categories = [
-  { name: "Trekking", description: "Trails, routes, and multi-day hikes across Nepal." },
-  { name: "Wildlife", description: "National parks, safaris, and rare species." },
-  { name: "Cultural", description: "Temples, festivals, and heritage sites." },
-  { name: "Travel Tips", description: "Practical guides for planning your trip." },
-];
+const CANONICAL_BLOG_CATEGORIES = ["Adventure", "Cultural", "Heritage", "Nature", "Religious"];
 
 const blogSeeds = [
   {
@@ -26,7 +21,7 @@ const blogSeeds = [
       "distances, altitude acclimatization days in Namche Bazaar and Dingboche, what to pack for " +
       "cold nights above 4000m, and how to budget for teahouse stays along the route. " +
       "Most trekkers complete the full round trip in 12-14 days, allowing for proper acclimatization.",
-    categoryName: "Trekking",
+    categoryName: "Adventure",
     tags: ["everest", "trekking", "himalaya"],
     relatedDestinationTitle: "Everest Base Camp",
     status: "published",
@@ -44,7 +39,7 @@ const blogSeeds = [
       "brings blooming rhododendrons and warmer temperatures. The monsoon (June-August) is best " +
       "avoided for trekking but is a quieter, greener time to explore cultural sites in the Kathmandu " +
       "Valley. Winter (December-February) offers clear skies but cold temperatures at altitude.",
-    categoryName: "Travel Tips",
+    categoryName: "Cultural",
     tags: ["planning", "weather", "season"],
     status: "published",
     seo: {
@@ -71,47 +66,39 @@ const seed = async () => {
 
   // Self-heal: clear any stray docs left with a null slug from earlier
   // buggy runs — these collide with the unique slug index on every upsert.
-  const catCleanup = await Category.deleteMany({ slug: null });
   const blogCleanup = await Blog.deleteMany({ slug: null });
-  if (catCleanup.deletedCount > 0) console.log(`Removed ${catCleanup.deletedCount} stray category(ies) with a null slug`);
   if (blogCleanup.deletedCount > 0) console.log(`Removed ${blogCleanup.deletedCount} stray blog(s) with a null slug`);
-
-  const categoryByName = {};
-  for (const cat of categories) {
-    const slug = slugify(cat.name, { lower: true, strict: true });
-    const doc = await Category.findOneAndUpdate(
-      { name: cat.name },
-      { $set: { ...cat, slug } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-    categoryByName[cat.name] = doc;
-  }
 
   for (const blog of blogSeeds) {
     const { categoryName, relatedDestinationTitle, ...rest } = blog;
     const slug = slugify(blog.title, { lower: true, strict: true });
 
-    const category = categoryByName[categoryName];
+    const category = categoryName
+      ? await Category.findOne({ name: categoryName })
+      : null;
+
     const relatedDestination = relatedDestinationTitle
       ? await Destination.findOne({ title: relatedDestinationTitle })
       : null;
 
+    const update = {
+      $set: {
+        ...rest,
+        slug,
+        ...(category ? { category: category._id } : {}),
+        relatedDestinations: relatedDestination ? [relatedDestination._id] : [],
+      },
+      $setOnInsert: { author: admin._id },
+    };
+
     await Blog.findOneAndUpdate(
       { title: blog.title },
-      {
-        $set: {
-          ...rest,
-          slug,
-          category: category?._id,
-          relatedDestinations: relatedDestination ? [relatedDestination._id] : [],
-        },
-        $setOnInsert: { author: admin._id },
-      },
+      update,
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
   }
 
-  console.log("Categories and sample blogs upserted (existing data preserved)");
+  console.log("Sample blogs upserted without creating new category records (admin-managed categories remain the source of truth)");
   await mongoose.disconnect();
   process.exit();
 };

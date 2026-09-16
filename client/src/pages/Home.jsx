@@ -215,33 +215,34 @@ export default function Home() {
           Mobile: ~55vh so the background photo reads as a landscape strip
           instead of a tall cropped portrait. Grows to a taller, more
           immersive panel from sm/md upward. */}
-      <section className="relative isolate flex h-[55vh] min-h-[380px] items-center overflow-hidden sm:h-[70vh] md:h-auto md:min-h-[640px]">
+      <section className="relative isolate flex h-[58vh] min-h-[420px] items-center overflow-hidden sm:h-[70vh] md:h-auto md:min-h-[680px]">
         <HeroSlideshow slides={HERO_SLIDES} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/10" aria-hidden="true" />
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent" aria-hidden="true" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-900/45 to-slate-950/30" aria-hidden="true" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(96,165,250,0.18),transparent_30%)]" aria-hidden="true" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/45 to-transparent" aria-hidden="true" />
 
-        <div className="relative mx-auto max-w-4xl px-4 py-10 text-center sm:py-16 md:py-20">
-          <span className="mb-3 inline-flex items-center gap-1.5 rounded-md border border-blue-300/40 bg-blue-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-200 backdrop-blur-sm sm:mb-4">
-            <Star size={12} className="fill-blue-200 text-blue-200" /> Nepal Tourism
+        <div className="relative mx-auto max-w-5xl px-4 py-10 text-center sm:py-16 md:py-20">
+          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-100 backdrop-blur-md sm:mb-5">
+            <Star size={12} className="fill-sky-200 text-sky-200" /> Nepal Tourism
           </span>
-          <h1 className="text-2xl font-normal leading-tight text-white sm:text-4xl md:text-6xl">
-            Discover Nepal: trekking, temples <span className="text-blue-300">&amp;</span> the Himalayas
+          <h1 className="text-3xl font-extrabold leading-[1.08] tracking-[-0.04em] text-white sm:text-5xl md:text-7xl">
+            Discover Nepal: trekking, temples <span className="text-brand-300">&amp;</span> the Himalayas
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-gray-200 sm:mt-5 sm:text-base md:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-200 sm:mt-6 sm:text-lg">
             A free, locally verified travel guide — from Everest Base Camp to Kathmandu's
             ancient squares, Pokhara's lakeside, and the jungles of Chitwan.
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5 sm:mt-8 sm:gap-3">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3 sm:mt-9">
             <Link
               to="/destinations"
-              className="touch-manipulation flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-900/30 transition-all hover:bg-blue-700 hover:shadow-xl active:scale-[0.97] active:bg-blue-800 sm:px-6 sm:py-3"
+              className="touch-manipulation inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(14,116,144,0.25)] transition-all hover:brightness-110 active:scale-[0.98]"
             >
               Explore destinations <ArrowRight size={15} />
             </Link>
             <Link
               to="/blogs"
-              className="touch-manipulation rounded-md border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-[0.97] active:bg-white/30 sm:px-6 sm:py-3"
+              className="touch-manipulation rounded-full border border-white/30 bg-white/8 px-6 py-3 text-sm font-semibold text-white backdrop-blur-md transition-all hover:bg-white/15 active:scale-[0.98]"
             >
               Read travel stories
             </Link>
@@ -259,25 +260,25 @@ export default function Home() {
       </section>
 
       {/* ---------------- Stat strip — dark contrast band right under the hero ---------------- */}
-      <section className="border-b border-red-900 bg-gray-800 px-4 py-7">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-3 text-center text-sm text-gray-300">
+      <section className="border-b border-slate-200 bg-slate-900 px-4 py-7 text-slate-200">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-3 text-center text-sm">
           <span>
-            <strong className="text-lg font-semibold text-blue-400">
+            <strong className="text-lg font-bold text-brand-300">
               {totalDestinations != null ? totalDestinations : "—"}+
             </strong>{" "}
             destinations catalogued
           </span>
-          <span className="hidden text-gray-700 sm:inline">·</span>
+          <span className="hidden text-slate-600 sm:inline">·</span>
           <span>
-            <strong className="text-lg font-semibold text-emerald-400">7</strong> provinces, one Himalayan spine
+            <strong className="text-lg font-bold text-emerald-300">7</strong> provinces, one Himalayan spine
           </span>
-          <span className="hidden text-gray-700 sm:inline">·</span>
+          <span className="hidden text-slate-600 sm:inline">·</span>
           <span>
-            <strong className="text-lg font-semibold text-amber-400">4</strong> UNESCO World Heritage Sites
+            <strong className="text-lg font-bold text-amber-300">4</strong> UNESCO World Heritage Sites
           </span>
-          <span className="hidden text-gray-700 sm:inline">·</span>
+          <span className="hidden text-slate-600 sm:inline">·</span>
           <span>
-            <strong className="text-lg font-semibold text-rose-400">8,849 m</strong> highest point on Earth
+            <strong className="text-lg font-bold text-rose-300">8,849 m</strong> highest point on Earth
           </span>
         </div>
       </section>
